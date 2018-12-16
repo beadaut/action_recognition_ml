@@ -62,10 +62,10 @@ def MCC(TP, TN, FP, FN):
 
 def placeholder_inputs(batch_size, num_frames):
     # batch size should be Nnone
-    pointclouds_pl = tf.placeholder(tf.float32, shape=(
+    inputs_pl = tf.placeholder(tf.float32, shape=(
         cfg.batch_size, 240, 320, num_frames))
     labels_pl = tf.placeholder(tf.int32, shape=(None))
-    return pointclouds_pl, labels_pl
+    return inputs_pl, labels_pl
 
 def train():
     log_string('***** Config *****')
@@ -80,7 +80,7 @@ def train():
     log_string('** weight_decay: {}'.format(cfg.weight_decay))
 
     with tf.Graph().as_default():
-        points, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
+        inputs, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
         is_training_pl = tf.placeholder(tf.bool, shape=())
         keep_prob_pl = tf.placeholder(tf.float32)
 
@@ -88,7 +88,7 @@ def train():
         bn_decay = get_bn_decay(global_step)
         tf.summary.scalar('bn_decay', bn_decay)
 
-        pred = build_graph(points, is_training_pl, weight_decay=cfg.weight_decay, 
+        pred = build_graph(inputs, is_training_pl, weight_decay=cfg.weight_decay, 
                 keep_prob=keep_prob_pl, bn_decay=bn_decay)
         loss = get_loss(pred, labels)
 
@@ -165,7 +165,7 @@ def train():
         num_g_params = np.sum([np.prod(v.get_shape().as_list()) for v in tf.global_variables()])
         log_string('************ The Number of Global Parameters: {} ************'.format(num_g_params))
         
-        ops = {'pointclouds_pl': points,
+        ops = {'inputs_pl': inputs,
                'labels_pl': labels,
                'is_training_pl': is_training_pl,
                'keep_prob_pl':keep_prob_pl,
@@ -177,9 +177,9 @@ def train():
         
 
         train_dataset = np.load(
-            '/media/tjosh/vault/MSRAction3D/npy_5_set_1_training.npy')
+            '/media/tjosh/vault/MSRAction3D/npy_5_set_3_training.npy')
         validation_dataset = np.load(
-            '/media/tjosh/vault/MSRAction3D/npy_5_set_1_validation.npy')
+            '/media/tjosh/vault/MSRAction3D/npy_5_set_3_validation.npy')
         
         train_data_gen = DataGenerator(train_dataset, batch_size=cfg.batch_size)
         validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size)
@@ -205,7 +205,7 @@ def test_model():
         validation_data_gen = DataGenerator(
             validation_dataset, batch_size=cfg.batch_size)
 
-        points, labels = placeholder_inputs(
+        inputs, labels = placeholder_inputs(
             cfg.batch_size, cfg.num_frames)
         is_training_pl = tf.placeholder(tf.bool, shape=())
         keep_prob_pl = tf.placeholder(tf.float32)
@@ -215,7 +215,7 @@ def test_model():
         tf.summary.scalar('bn_decay', bn_decay)
 
         # Get model and loss
-        pred = build_graph(points, is_training_pl, weight_decay=cfg.weight_decay,
+        pred = build_graph(inputs, is_training_pl, weight_decay=cfg.weight_decay,
                            keep_prob=keep_prob_pl, bn_decay=bn_decay)
         loss = get_loss(pred, labels)
 
@@ -276,7 +276,7 @@ def test_model():
                                for v in tf.global_variables()])
         print('************ The Number of Global Parameters: {} ************'.format(num_g_params))
 
-        ops = {'pointclouds_pl': points,
+        ops = {'inputs_pl': inputs,
                'labels_pl': labels,
                'keep_prob_pl': keep_prob_pl,
                'is_training_pl': is_training_pl,
@@ -315,7 +315,7 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
         # if np.random.rand()>0.3:
         #     current_data = jitter_point_cloud(current_data, sigma=200)
 
-        feed_dict = {ops['pointclouds_pl']: current_data,
+        feed_dict = {ops['inputs_pl']: current_data,
                      ops['labels_pl']: current_label,
                      ops['keep_prob_pl']: 0.4,
                      ops['is_training_pl']: is_training}
@@ -345,7 +345,7 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
     log_string('mean loss: %f' % (mean_loss))
     log_string('accuracy: %f' % (mean_acc))
 
-    # tf.saved_model.simple_save(sess, LOGDIR+'/saved_model_simple', inputs={"input_node": ops['pointclouds_pl']}, outputs={"output":ops['pred']})
+    # tf.saved_model.simple_save(sess, LOGDIR+'/saved_model_simple', inputs={"input_node": ops['inputs_pl']}, outputs={"output":ops['pred']})
     # log_string('precision: %f' % (precision))
     # log_string('recall: %f' % (recall))
     # log_string('f1_score: %f' % (f1_score))
@@ -366,7 +366,7 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer, logging=True):
     for iterations in range(iters_per_epoch):
         current_data, current_labels = next(validation_data_gen.generator)
 
-        feed_dict = {ops['pointclouds_pl']: current_data,
+        feed_dict = {ops['inputs_pl']: current_data,
                      ops['labels_pl']: current_labels,
                      ops['keep_prob_pl']: 1.0,
                      ops['is_training_pl']: is_training}
