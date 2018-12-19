@@ -9,6 +9,7 @@ from utils.config import cfg
 from utils.data_generator_utils import DataGenerator, load_npy_filenames, jitter_point_cloud
 
 from tqdm import tqdm
+from sklearn.utils import shuffle
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(BASE_DIR)
@@ -176,13 +177,15 @@ def train():
                'step': global_step}
         
 
-        train_dataset = np.load(
-            '/media/tjosh/vault/MSRAction3D/npy_5_set_3_training.npy')
-        validation_dataset = np.load(
-            '/media/tjosh/vault/MSRAction3D/npy_5_set_3_validation.npy')
+        dataset = np.load(
+            '/media/tjosh/vault/MSRAction3D/npy_5_set_2.npy')
+        set_size = len(dataset)
+        dataset = shuffle(dataset)
+        training_dataset = dataset[:int(set_size*0.5)]
+        validation_dataset = dataset[int(set_size*0.5):]
         
-        train_data_gen = DataGenerator(train_dataset, batch_size=cfg.batch_size)
-        validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size)
+        train_data_gen = DataGenerator(training_dataset, batch_size=cfg.batch_size)
+        validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size, augment=False)
 
         for epoch in range(1, cfg.epoch+1):
             log_string('\n******** Training:---Epoch_{}/{} *********'.format(epoch, cfg.epoch))
@@ -393,6 +396,7 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer, logging=True):
         print('eval mean loss: %f' % (total_avg_loss))
         print('eval accuracy: %f' % (total_avg_acc))
     # log_string('eval avg class acc: %f' % (np.mean(np.array(total_correct_class)/np.array(total_seen_class, dtype=np.float))))
+
 
 def save_net():
     model_path = LOGDIR + "/model_epoch_" + cfg.load_model_epoch

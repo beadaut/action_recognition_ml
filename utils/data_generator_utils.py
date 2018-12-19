@@ -108,9 +108,10 @@ class DataGenerator(object):
   Class for creating a datset generator
   """
 
-  def __init__(self, dataset_file_list, batch_size=100, reshape_input=None):
+  def __init__(self, dataset_file_list, batch_size=100, reshape_input=None, augment=True):
     super(DataGenerator, self).__init__()
 
+    self.augment = augment
     self.all_dataset = dataset_file_list
     self.data_size = len(self.all_dataset)
 
@@ -164,7 +165,8 @@ class DataGenerator(object):
         # print("file: ", current_file)
         input_i = np.load(current_file) # for npy files
 
-        input_i = transfrom_input(input_i, M)
+        if self.augment:
+          input_i = transfrom_input(input_i, M)
 
         # input_i = np.flipud(input_i) # this is a fix on the order of array, need to use a more effecient solution
         # print("shape of input_i", np.shape(input_i))
