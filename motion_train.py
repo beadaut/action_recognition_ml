@@ -178,11 +178,11 @@ def train():
         
 
         dataset = np.load(
-            '/media/tjosh/vault/MSRAction3D/npy_5_set_2.npy')
+            '/media/tjosh/vault/MSRAction3D/npy_5_set_3.npy')
         set_size = len(dataset)
         dataset = shuffle(dataset)
-        training_dataset = dataset[:int(set_size*0.5)]
-        validation_dataset = dataset[int(set_size*0.5):]
+        training_dataset = dataset[:int(set_size*0.33)]
+        validation_dataset = dataset[int(set_size*0.33):]
         
         train_data_gen = DataGenerator(training_dataset, batch_size=cfg.batch_size)
         validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size, augment=False)
