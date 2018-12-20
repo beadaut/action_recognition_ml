@@ -113,6 +113,7 @@ class DataGenerator(object):
 
     self.augment = augment
     self.all_dataset = dataset_file_list
+    self.all_dataset = shuffle(self.all_dataset)
     self.data_size = len(self.all_dataset)
 
     self.batch_size = batch_size
@@ -153,6 +154,7 @@ class DataGenerator(object):
         if len(labels_batch) > self.batch_size-1:
 
           # return generated here
+          
           yield inputs_batch, labels_batch
           inputs_batch = []
           labels_batch = []
@@ -173,6 +175,7 @@ class DataGenerator(object):
         input_i = np.transpose(input_i, (1,2,0)) # transpose the input to the appropriate shape
         
         # label_i = int(current_file.split("/")[-2].split("_")[-1])
+        # print("current file: ", current_file)
         label_i = int(current_file.split('/')[-1].split('_')[0].split('a')[1])
         # print('label: ', label_i)
         
@@ -337,7 +340,7 @@ def test_triplet_generator():
 
 
 def test_data_gen():
-  train_dataset = np.load('/media/tjosh/vault/MSRAction3D/npy_5_training.npy')
+  train_dataset = np.load('/media/tjosh/vault/MSRAction3D/pc_npy_5_training.npy')
   data_gen = DataGenerator(train_dataset, batch_size=20)
   new_data_batch = next(data_gen.generator)
   x = new_data_batch[0]

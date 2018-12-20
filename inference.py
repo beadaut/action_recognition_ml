@@ -142,18 +142,18 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False):
 
 
 # test:
-filename = '/home/tjosh/datasets/MSRAction3D/csv/a18_s02_e02_sdepth.csv'
+# filename = '/home/tjosh/datasets/MSRAction3D/csv/a18_s02_e02_sdepth.csv'
 # correct = do_inference(filename, model_path, time_steps=5)
 # set_1_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
 # set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
 # set_3_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
 
-set_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
-model_path = 'logdir_set_2_t3_simple_ff_5_96/model_epoch_100'
+set_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
+model_path = 'logdir_set_3_t2_simple_ff_5_96/model_epoch_100'
 
 all_samples = []
 for label in set_labels:
-  datasamples = glob.glob('/home/tjosh/datasets/MSRAction3D/csv/a'+label+'_s*[01-10]_e0*[0-9]_sdepth.csv')
+  datasamples = glob.glob('csv/a'+label+'_s*[01-10]_e0*[0-9]_sdepth.csv')
   # datasamples = glob.glob('/home/tjosh/datasets/MSRAction3D/csv/*.csv')
   all_samples += datasamples
   # for sample in datasamples:
