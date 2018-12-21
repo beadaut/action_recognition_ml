@@ -9,6 +9,9 @@ import matplotlib.image as mpimg
 from scipy import ndimage
 from sklearn.utils import shuffle
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 from convert_depth2pc import generate_pointcloud
 
 labels_count = [0]*20
@@ -54,9 +57,8 @@ def csv2input_data(filename, time_steps=5, display_images=False,
     for i in range(np.shape(all_data)[-1]):
       if i < time_steps:
         continue
-      input_filename = filename.split('.')[0].split('/')[1]
+      input_filename = filename.split('.')[0].split('/')[-1]
       input_filename = save_dir+'/'+input_filename+(str(i))+'-'+str(aug+1)
-      print('preprocessed: ', input_filename)
       input_bundle = []
       for x in range(time_steps):
         input_i_x = np.reshape(all_data[:,i-x], [240,320])
@@ -64,12 +66,14 @@ def csv2input_data(filename, time_steps=5, display_images=False,
           input_i_x = generate_pointcloud(input_i_x)  # , max_points=1024
         input_bundle.append(input_i_x)
       # input_bundle = [np.reshape(all_data[:,i-x], [240,320]) for x in range(time_steps)]
-      print("shape of bundle: ", np.shape(input_bundle))
-      print("input filename: ", input_filename)
-      print("\n")
+      # print('original name: ', filename)
+      # print("shape of bundle: ", np.shape(input_bundle))
+      # print("input filename: ", input_filename)
+      # print("\n")
       
       # saving a numpy file
-      # np.save(input_filename, np.array(input_bundle))
+      show_sample(np.transpose(input_bundle, (1, 2, 0)))
+      np.save(input_filename, np.array(input_bundle))
 
       # # saving as pointcloud file (alone)
       # print("shape of raw data: ", np.shape(all_data[:,i]))
@@ -92,15 +96,37 @@ def csv2input_data(filename, time_steps=5, display_images=False,
             break
 
   # print('Shape of input bundle: ', np.shape(input_bundle))
-  label = filename.split('/')[1].split('_')[0].split('a')[1]
+  label = filename.split('/')[-1].split('_')[0].split('a')[1]
+  print("filename: ", filename)
+  print('Lable: ', label)
   labels_count[int(label)-1]+=1
-  # print('Lable: ', int(label))
   print('Lable count: ', labels_count)
 
 # # test:
 # filename = 'csv/a01_s01_e03_sdepth.csv'
 # csv2input_data(filename, time_steps=5, display_images=False, save_point_cloud=True)
 
+
+def show_sample(x):
+    # create plot object
+    print("shape of x: ", np.shape(x))
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.view_init(0, 270)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+
+    # fill the plot with data (auto)
+    for i, (c, m) in enumerate([('r', 'o'), ('b', '^'), ('y', 'X'), ('g', 'v')]):
+        xs = x[:, :, i][:, 0]
+        ys = x[:, :, i][:, 1]
+        zs = x[:, :, i][:, 2]
+        print('max of zs: ', np.max(zs))
+        print('min of zs: ', np.min(zs))
+        ax.scatter(xs, ys, zs, s=1.5, c=c, marker=m)
+
+    plt.show()
 
 all_files = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
 print("all csv files: ", len(all_files))
@@ -111,7 +137,8 @@ for i, filename in enumerate(all_files):
   #   continue
   try:
     # pass
-    csv2input_data(filename, time_steps=5, save_point_cloud=True, save_dir='/media/tjosh/vault/MSRAction3D/pc_npy_5', augmentations=3)
+    csv2input_data(filename, time_steps=5, save_point_cloud=True, 
+      save_dir='/media/tjosh/vault/MSRAction3D/pc_npy_5', augmentations=3)
   except Exception as e:
     print('Error: ',e)
     continue

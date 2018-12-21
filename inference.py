@@ -33,8 +33,10 @@ class InferenceModel(object):
               1, 240, 320, cfg.num_frames))
       self.is_training_pl = tf.placeholder(tf.bool, shape=())
 
-      self.pred = build_graph(self.inputs_pl, self.is_training_pl,
+      pred = build_graph(self.inputs_pl, self.is_training_pl,
                         weight_decay=0.0, bn_decay=None)
+
+      self.pred=tf.nn.softmax(pred)
 
       # config_ss = tf.ConfigProto()
       self.sess = tf.Session()
@@ -88,7 +90,8 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False):
   #   saver.restore(sess, model_path)
   #   print("\nLoaded model... ", model_path)
 
-  predictions_array = np.zeros(20)
+  # predictions_array = np.zeros(20)
+  predictions_array = np.ones(20)
   for i in range(np.shape(all_data)[-1]):
     if i < time_steps:
       continue
@@ -102,11 +105,12 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False):
         feed_dict={inference_model.inputs_pl: data_in, 
                     inference_model.is_training_pl: False})
     
-    predictions_array += prediction[0]
+    predictions_array *= prediction[0]
     
     predict_class = np.argmax(prediction[0])
     
-    # print("prediction: ", prediction)
+    # print("predictions: ", prediction[0])
+    # print("predictions array: ", predictions_array)
     # print("predict class now: ", predict_class)
 
 
@@ -149,11 +153,12 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False):
 # set_3_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
 
 set_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
-model_path = 'logdir_set_3_t2_simple_ff_5_96/model_epoch_100'
+model_path = 'logdir_set_2_t1_simple_ff_5_96/model_epoch_40'
 
 all_samples = []
 for label in set_labels:
-  datasamples = glob.glob('csv/a'+label+'_s*[01-10]_e0*[0-9]_sdepth.csv')
+  datasamples = glob.glob(
+      '/media/tjosh/vault/MSRAction3D/csv/a'+label+'_s*[01-10]_e0*[0-9]_sdepth.csv')
   # datasamples = glob.glob('/home/tjosh/datasets/MSRAction3D/csv/*.csv')
   all_samples += datasamples
   # for sample in datasamples:

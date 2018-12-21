@@ -5,6 +5,10 @@ import random
 
 import numpy as np
 
+
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+
 from scipy import ndimage
 from copy import deepcopy
 from sklearn.utils import shuffle
@@ -167,8 +171,8 @@ class DataGenerator(object):
         # print("file: ", current_file)
         input_i = np.load(current_file) # for npy files
 
-        if self.augment:
-          input_i = transfrom_input(input_i, M)
+        # if self.augment:
+        #   input_i = transfrom_input(input_i, M)
 
         # input_i = np.flipud(input_i) # this is a fix on the order of array, need to use a more effecient solution
         # print("shape of input_i", np.shape(input_i))
@@ -177,6 +181,8 @@ class DataGenerator(object):
         # label_i = int(current_file.split("/")[-2].split("_")[-1])
         # print("current file: ", current_file)
         label_i = int(current_file.split('/')[-1].split('_')[0].split('a')[1])
+        if label_i==20:
+          label_i=0
         # print('label: ', label_i)
         
         inputs_batch.append(input_i)
@@ -339,8 +345,30 @@ def test_triplet_generator():
       print(y[i])
 
 
+def show_sample(x):
+    # create plot object
+    print("shape of x: ", np.shape(x))
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.view_init(0, 270)
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+
+    # fill the plot with data (auto)
+    for i, (c, m) in enumerate([('r', 'o'), ('b', '^'), ('y', 'X'), ('g', 'v')]):
+        xs = x[:, :, i][:, 0]
+        ys = x[:, :, i][:, 1]
+        zs = x[:, :, i][:, 2]
+        print('max of zs: ', np.max(zs))
+        print('min of zs: ', np.min(zs))
+        ax.scatter(xs, ys, zs, s=1.5, c=c, marker=m)
+    
+    plt.show()
+
 def test_data_gen():
-  train_dataset = np.load('/media/tjosh/vault/MSRAction3D/pc_npy_5_training.npy')
+  # train_dataset = np.load('/media/tjosh/vault/MSRAction3D/pc_npy_5_training.npy')
+  train_dataset = glob.glob('/media/tjosh/vault/MSRAction3D/pc_npy_5/*.npy')
   data_gen = DataGenerator(train_dataset, batch_size=20)
   new_data_batch = next(data_gen.generator)
   x = new_data_batch[0]
@@ -348,6 +376,7 @@ def test_data_gen():
   print("size of dataset batch: ", np.shape(x))
   for i in range(20):
     # print(x[i])
+    show_sample(x[i])
     print("shape of x[i]: ", np.shape(x[i]))
     print(y[i])
 

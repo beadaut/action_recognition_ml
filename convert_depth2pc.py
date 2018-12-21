@@ -75,9 +75,9 @@ def generate_pointcloud(depth_array, max_points=2048, save_file=None):
     if save_file:
         np.save(points, save_file)
     
-    show_sample(np.array(pcd_array))
+    # show_sample(np.array(pcd_array))
     # print("size of converted array: ", np.shape(pcd_array))
-    return pcd_array
+    return np.array(pcd_array)
 
 def generate_pointcloud_old(depth_file,ply_file):
     depth = Image.fromarray(depth_file, 'I')
