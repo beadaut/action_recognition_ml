@@ -100,7 +100,7 @@ def build_graph(input_pl, is_training, weight_decay=0.0, keep_prob=1.0, bn_decay
     print("\n The skip pool model....")
     print("Netowrk Input: ", input_pl)
 
-    pool_num = int(cfg.num_points/1)
+    pool_num = int(cfg.num_points/3)
 
     net = tf_ops.conv2d(input_pl, 128, [1, 3],
                         padding='VALID', stride=[1, 1],
@@ -114,7 +114,7 @@ def build_graph(input_pl, is_training, weight_decay=0.0, keep_prob=1.0, bn_decay
     skip_pool = tf_ops.max_pool2d(net, [pool_num, 1],
                                   padding='VALID', scope='maxpool')
 
-    net = tf_ops.conv2d(net, 256, [1, 1],
+    net = tf_ops.conv2d(net, 64, [1, 1],
                         padding='VALID', stride=[1, 1],
                         bn=True, is_training=is_training,
                         scope='conv2', bn_decay=bn_decay)
@@ -128,7 +128,7 @@ def build_graph(input_pl, is_training, weight_decay=0.0, keep_prob=1.0, bn_decay
 
     # net = tf.nn.relu(net)
 
-    net = tf_ops.conv2d(net, 256, [1, 1],
+    net = tf_ops.conv2d(net, 64, [1, 1],
                         padding='VALID', stride=[1, 1],
                         bn=True, is_training=is_training,
                         scope='conv4', bn_decay=bn_decay)
@@ -154,6 +154,16 @@ def build_graph(input_pl, is_training, weight_decay=0.0, keep_prob=1.0, bn_decay
     net = tf.add(net, skip_multiply)
 
     print("\nshape after skip pool: ", net.shape)
+
+    net = tf_ops.conv2d(net, 256, [1,1],
+                         padding='VALID', stride=[1,1],
+                         bn=True, is_training=is_training,
+                         scope='conv3', bn_decay=bn_decay)
+
+    net = tf.nn.relu(net)
+
+    net = tf_ops.max_pool2d(net, [pool_num, 1],
+                            padding='VALID', scope='maxpool')
 
     net = tf.contrib.layers.flatten(net)
 
