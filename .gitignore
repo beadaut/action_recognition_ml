@@ -2,3 +2,4 @@ logdir*
 *.pyc
 .vscode
 csv
+sample_dataset

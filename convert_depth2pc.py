@@ -57,7 +57,7 @@ def generate_pointcloud(depth_array, max_points=2048, save_file=None):
             Y = v
 
             # print("x: {}, y: {}".format(X, Y))
-            points.append((X, Y, Z))
+            points.append((Z, Y, X))
 
     # print("number of elements: ", np.shape(points))
     # show_sample(np.array(points))

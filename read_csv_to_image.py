@@ -112,8 +112,8 @@ def show_sample(x):
     print("shape of x: ", np.shape(x))
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
-    ax.view_init(0, 270)
-    ax.set_xticks([])
+    ax.view_init(0, 180)
+    # ax.set_xticks([])
     ax.set_yticks([])
     ax.set_zticks([])
 
@@ -129,6 +129,7 @@ def show_sample(x):
     plt.show()
 
 all_files = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
+all_files = shuffle(all_files)
 print("all csv files: ", len(all_files))
 for i, filename in enumerate(all_files):
   # print("{}/{} done.".format((i+1), len(all_files)))
