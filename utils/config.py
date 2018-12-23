@@ -8,7 +8,7 @@ flags = tf.app.flags
 ############################
 
 flags.DEFINE_integer('num_frames', 5, 'number of frames')
-flags.DEFINE_integer('num_classes', 20, 'number of classes')
+flags.DEFINE_integer('num_classes', 10, 'number of classes')
 
 # for training
 flags.DEFINE_integer('batch_size', 64, 'batch size')
@@ -23,7 +23,7 @@ flags.DEFINE_float('weight_decay', 0.001, 'weight_decay')
 #   environment setting    #
 ############################ load_model_epoch
 flags.DEFINE_string('model_name', 'simple_ff', 'name of the model') # pointnet or attention
-flags.DEFINE_string('logdir', 'logdir_set_3_t1_', 'logs directory')
+flags.DEFINE_string('logdir', 'logdir_utkinect_1_', 'logs directory')
 flags.DEFINE_string('dataset_directory', 'dataset/hand_controls_npy', 'dataset directory')
 flags.DEFINE_boolean('is_training', True, 'train or predict phase')
 flags.DEFINE_string('load_model_epoch', '0', 'epoch to load model from')

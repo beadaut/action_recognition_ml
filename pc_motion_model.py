@@ -102,6 +102,9 @@ def build_graph_ext(input_pl, is_training, weight_decay=0.0, keep_prob=1.0, bn_d
 
     pool_num = int(cfg.num_points/3)
 
+    # to normalize the data before inputing
+    # input_pl = tf.layers.batch_normalization(input_pl)
+
     net = tf_ops.conv2d(input_pl, 128, [1, 3],
                         padding='VALID', stride=[1, 1],
                         bn=True, is_training=is_training,
