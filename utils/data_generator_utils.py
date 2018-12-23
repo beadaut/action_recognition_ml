@@ -180,9 +180,10 @@ class DataGenerator(object):
         
         # label_i = int(current_file.split("/")[-2].split("_")[-1])
         # print("current file: ", current_file)
-        label_i = int(current_file.split('/')[-1].split('_')[0].split('a')[1])
-        if label_i==20:
-          label_i=0
+        # label_i = int(current_file.split('/')[-1].split('_')[0].split('a')[1]) # for msraction 3d
+        # if label_i==20:
+        #   label_i=0
+        label_i = int(current_file.split('\\')[-1].split('.')[0].split('_')[-1]) # for utkinect action 3d
         # print('label: ', label_i)
         
         inputs_batch.append(input_i)
@@ -367,18 +368,18 @@ def show_sample(x):
     plt.show()
 
 def test_data_gen():
-  # train_dataset = np.load('/media/tjosh/vault/MSRAction3D/pc_npy_5_training.npy')
-  train_dataset = glob.glob('/media/tjosh/vault/MSRAction3D/pc_npy_5/*.npy')
+  train_dataset = np.load('d:/datasets/UTKinectAction3D_npy_5/training.npy')
+  # train_dataset = glob.glob('d:/datasets/UTKinectAction3D_npy_5/training.npy')
   data_gen = DataGenerator(train_dataset, batch_size=20)
   new_data_batch = next(data_gen.generator)
   x = new_data_batch[0]
   y = new_data_batch[1]
   print("size of dataset batch: ", np.shape(x))
-  for i in range(20):
-    # print(x[i])
-    show_sample(x[i])
-    print("shape of x[i]: ", np.shape(x[i]))
-    print(y[i])
+  # for i in range(20):
+  #   print(x[i])
+  #   # show_sample(x[i])
+  #   print("shape of x[i]: ", np.shape(x[i]))
+  #   print(y[i])
 
 
 if __name__ == '__main__':
