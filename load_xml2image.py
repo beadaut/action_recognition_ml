@@ -70,15 +70,20 @@ directory_list = os.walk(dataset_dir)
 actions = {"walk":0, "sitDown":1, "standUp":2, "pickUp":3, "carry":4, 
     "throw":5, "push":6, "pull":7, "waveHands":8,"clapHands":9}
 
+label2actions = {0:"walk", 1:"sitDown", 2:"standUp", 3:"pickUp", 4:"carry", 
+    5:"throw", 6:"push", 7:"pull", 8:"waveHands",9:"clapHands"}
+
 with open('d:/datasets/UTKinectAction3D_depth/actionLabel.json') as f:
     json_file = json.load(f)
     # print(json_file.keys())
 action_buffer = []
 action_buffer_size = 5
+action_counts = 0
 for dirs in directory_list:
     file_dir = dirs[0]
     files_list = glob.glob(file_dir+'/*.xml')
     files_list.sort(key=natural_sort_key)
+    previous_action = None
     for filename in files_list:
         
         subject_key = filename.split('\\')[-2]
@@ -100,6 +105,13 @@ for dirs in directory_list:
         save_name = save_name.replace("UTKinectAction3D_depth", "UTKinectAction3D_npy_5")
         save_dir = save_name.split('depthImg')[-2]
         
+        if previous_action != action_label:
+            action_counts += 1
+            previous_action = action_label
+            # this means a new action starts
+
+            # report the evaluation for the last action and start a new evaluation for the next action
+            
         if not os.path.exists(save_dir):
             print("does not exist!")
             os.makedirs(save_dir)
@@ -107,6 +119,7 @@ for dirs in directory_list:
         print("Save name: ", save_name)
         # print("Save dir: ", save_dir)
         print("action label: ", action_label)
+        print("action counts: ", action_counts)
         action_buffer.append(filename)
         if len(action_buffer) > action_buffer_size:
             action_buffer.pop(0)
@@ -114,11 +127,11 @@ for dirs in directory_list:
         # print("action buffer: ", action_buffer)
 
         # function to bundle dataset input here:
-        input_bundle = make_input_bundle(action_buffer)
+        # input_bundle = make_input_bundle(action_buffer)
         # print(np.shape(input_bundle))
 
         # save the dataset bundle here:
-        np.save(save_name, input_bundle)
+        # np.save(save_name, input_bundle)
 
         # for action_file in action_buffer:
         #     print(action_file)
