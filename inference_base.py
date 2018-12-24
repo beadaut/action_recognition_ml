@@ -152,8 +152,8 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False):
 # set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
 # set_3_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
 
-set_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
-model_path = 'logdir_set_2_t1_simple_ff_5_96/model_epoch_40'
+set_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
+model_path = 'logdir_set_1_t1_simple_ff_5_96/model_epoch_30'
 
 all_samples = []
 for label in set_labels:

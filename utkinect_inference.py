@@ -1,7 +1,7 @@
 import os
 import re
 import csv
-import cv2
+# import cv2
 import glob
 import json
 import time
@@ -171,12 +171,12 @@ def make_input_bundle(filenames_list):
     return np.array(input_bundle)
 
 
-model_path = 'logdir_utkinect_1_simple_ff_5_96/model_epoch_30'
+model_path = 'logdir_utkinect_1_simple_ff_6_128/model_epoch_100'
 inference_model = InferenceModel(num_frames=cfg.num_frames, model_path=model_path)
 
 
 # general solution
-dataset_dir = 'd:/datasets/UTKinectAction3D_depth'
+dataset_dir = '/media/tjosh/vault/UTKinectAction3D_depth_test'
 
 directory_list = os.walk(dataset_dir)
 
@@ -186,10 +186,10 @@ actions = {"walk":0, "sitDown":1, "standUp":2, "pickUp":3, "carry":4,
 label2actions = {0:"walk", 1:"sitDown", 2:"standUp", 3:"pickUp", 4:"carry", 
     5:"throw", 6:"push", 7:"pull", 8:"waveHands",9:"clapHands"}
 
-with open('d:/datasets/UTKinectAction3D_depth/actionLabel.json') as f:
+with open('/media/tjosh/vault/UTKinectAction3D_depth_test/actionLabel.json') as f:
     json_file = json.load(f)
 
-action_buffer_size = 5
+action_buffer_size = cfg.num_frames
 action_counts = 0
 predictions_array = np.ones(cfg.num_classes)
 num_corrects = 0
@@ -202,7 +202,8 @@ for dirs in directory_list:
     action_buffer = []
     for filename in files_list:
         
-        subject_key = filename.split('\\')[-2]
+        # subject_key = filename.split('\\')[-2]
+        subject_key = filename.split('/')[-2]
         frame_no = int(re.split('depthImg|.xml',filename)[-2])
         subject_actions = json_file[subject_key]
         
@@ -265,6 +266,18 @@ for dirs in directory_list:
         print("action prediction: ", pred_action)
         # print("action counts: ", action_counts)
 
+    # report the evaluation for the last action and start a new evaluation for the next action
+    final_action_prediction = np.argmax(predictions_array)
+    print("\nthis action final: ", final_action_prediction)
+    correct = int(final_action_prediction == previous_action)
+    print("Correct: ", (final_action_prediction == previous_action))
+    print("\n")
+    num_corrects += correct
+    # move on
+    action_counts += 1
+    # previous_action = action_label
+    action_buffer = []
+    predictions_array = np.ones(cfg.num_classes)
 
         # print(np.shape(input_bundle))
 print("Total action counts: ", action_counts)

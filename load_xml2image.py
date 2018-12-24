@@ -3,12 +3,14 @@ Load xml image file from UTKinect Action 3D dataset
 """
 import re
 import os
-import cv2
+# import cv2
 import json
 import numpy as np
 import xml.etree.ElementTree
 import matplotlib.pyplot as plt
 import glob
+
+from utils.config import cfg
 
 _nsre = re.compile('([0-9]+)')
 def natural_sort_key(s):
@@ -63,7 +65,11 @@ def make_input_bundle(filenames_list):
 
 
 # general solution
-dataset_dir = 'd:/datasets/UTKinectAction3D_depth'
+# dataset_dir = 'd:/datasets/UTKinectAction3D_depth' # from ext drive
+dataset_dir = '/media/tjosh/vault/UTKinectAction3D_depth_train'
+
+
+
 
 directory_list = os.walk(dataset_dir)
 
@@ -73,11 +79,11 @@ actions = {"walk":0, "sitDown":1, "standUp":2, "pickUp":3, "carry":4,
 label2actions = {0:"walk", 1:"sitDown", 2:"standUp", 3:"pickUp", 4:"carry", 
     5:"throw", 6:"push", 7:"pull", 8:"waveHands",9:"clapHands"}
 
-with open('d:/datasets/UTKinectAction3D_depth/actionLabel.json') as f:
+with open('/media/tjosh/vault/UTKinectAction3D_depth_train/actionLabel.json') as f:
     json_file = json.load(f)
     # print(json_file.keys())
 action_buffer = []
-action_buffer_size = 5
+action_buffer_size = cfg.num_frames
 action_counts = 0
 for dirs in directory_list:
     file_dir = dirs[0]
@@ -85,8 +91,9 @@ for dirs in directory_list:
     files_list.sort(key=natural_sort_key)
     previous_action = None
     for filename in files_list:
-        
-        subject_key = filename.split('\\')[-2]
+        print("filename: ", filename)
+        # subject_key = filename.split('\\')[-2] # on windows
+        subject_key = filename.split('/')[-2]
         frame_no = int(re.split('depthImg|.xml',filename)[-2])
         subject_actions = json_file[subject_key]
         
@@ -102,13 +109,14 @@ for dirs in directory_list:
                 continue
         print("\n{}, frame {}.".format(subject_key, frame_no))
         save_name = filename.split('.')[-2]+'_'+str(action_label)
-        save_name = save_name.replace("UTKinectAction3D_depth", "UTKinectAction3D_npy_5")
+        save_name = save_name.replace("UTKinectAction3D_depth_train", "UTKinectAction3D_train_npy_"+str(cfg.num_frames))
         save_dir = save_name.split('depthImg')[-2]
         
         if previous_action != action_label:
             action_counts += 1
             previous_action = action_label
             # this means a new action starts
+            action_buffer = []
 
             # report the evaluation for the last action and start a new evaluation for the next action
             
@@ -121,17 +129,22 @@ for dirs in directory_list:
         print("action label: ", action_label)
         print("action counts: ", action_counts)
         action_buffer.append(filename)
+
+        if len(action_buffer) <= action_buffer_size:
+          continue
+
+
         if len(action_buffer) > action_buffer_size:
             action_buffer.pop(0)
         
         # print("action buffer: ", action_buffer)
 
         # function to bundle dataset input here:
-        # input_bundle = make_input_bundle(action_buffer)
-        # print(np.shape(input_bundle))
+        input_bundle = make_input_bundle(action_buffer)
+        print(np.shape(input_bundle))
 
         # save the dataset bundle here:
-        # np.save(save_name, input_bundle)
+        np.save(save_name, input_bundle)
 
         # for action_file in action_buffer:
         #     print(action_file)
