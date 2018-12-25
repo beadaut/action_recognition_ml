@@ -171,7 +171,7 @@ def make_input_bundle(filenames_list):
     return np.array(input_bundle)
 
 
-model_path = 'logdir_utkinect_1_simple_ff_6_128/model_epoch_100'
+model_path = 'logdir_utkinect_2_simple_ff_6_96/model_epoch_80'
 inference_model = InferenceModel(num_frames=cfg.num_frames, model_path=model_path)
 
 

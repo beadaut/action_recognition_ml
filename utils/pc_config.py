@@ -23,7 +23,7 @@ flags.DEFINE_float('weight_decay', 0.001, 'weight_decay')
 #   environment setting    #
 ############################ load_model_epoch
 flags.DEFINE_string('model_name', 'pointnet', 'name of the model') # pointnet or attention
-flags.DEFINE_string('logdir', 'logdir_pc_npy_', 'logs directory')
+flags.DEFINE_string('logdir', 'logdir_new_pc_npy_', 'logs directory')
 flags.DEFINE_string('dataset_directory', 'dataset/hand_controls_npy', 'dataset directory')
 flags.DEFINE_boolean('is_training', True, 'train or predict phase')
 flags.DEFINE_string('load_model_epoch', '0', 'epoch to load model from')

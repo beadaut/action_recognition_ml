@@ -47,6 +47,8 @@ def generate_pointcloud(depth_array, max_points=2048, save_file=None):
     """
     depth_size = np.shape(depth_array)
 
+    # print("depth size: ", depth_size[1])
+
     points = []
     for v in range(depth_size[1]):
         for u in range(depth_size[0]):

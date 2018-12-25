@@ -8,13 +8,13 @@ flags = tf.app.flags
 ############################
 
 flags.DEFINE_integer('num_frames', 5, 'number of frames')
-flags.DEFINE_integer('num_classes', 10, 'number of classes')
+flags.DEFINE_integer('num_classes', 20, 'number of classes')
 
 # for training
 flags.DEFINE_integer('batch_size', 64, 'batch size')
 flags.DEFINE_integer('im_dim', 96, 'input_image dimension')
 flags.DEFINE_integer('epoch', 100, 'epoch')
-flags.DEFINE_float('init_learning_rate', 0.00001, 'initial learning rate')
+flags.DEFINE_float('init_learning_rate', 0.0003, 'initial learning rate')
 flags.DEFINE_integer('decay_step', 10*3000, 'decay step') # 20Xdataset_size has worked well
 flags.DEFINE_float('decay_rate', 0.9, 'decay rate')
 flags.DEFINE_float('weight_decay', 0.001, 'weight_decay')

@@ -9,7 +9,7 @@ import matplotlib.image as mpimg
 import time
 import tensorflow as tf
 
-from utils.config import cfg
+from utils.pc_config import cfg
 
 from scipy import ndimage
 from sklearn.utils import shuffle
@@ -32,8 +32,7 @@ class InferenceModel(object):
     with tf.Graph().as_default():
       self.inputs_pl = tf.placeholder(
           tf.float32, shape=(
-              # 1, 240, 320, cfg.num_frames))
-              1, 2048, 3, cfg.num_frames))
+              1, cfg.num_points, 3, cfg.num_frames))
       self.is_training_pl = tf.placeholder(tf.bool, shape=())
 
       pred = build_graph(self.inputs_pl, self.is_training_pl,
@@ -46,6 +45,27 @@ class InferenceModel(object):
       saver.restore(self.sess, model_path)
       print("\nLoaded model... ", model_path)
 
+
+def show_sample(x):
+    # create plot object
+    print("shape of x: ", np.shape(x))
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.view_init(0, 180)
+    # ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+
+    # fill the plot with data (auto)
+    for i, (c, m) in enumerate([('r', 'o'), ('b', '^'), ('y', 'X'), ('g', 'v')]):
+        xs = x[:, :, i][:, 0]
+        ys = x[:, :, i][:, 1]
+        zs = x[:, :, i][:, 2]
+        print('max of zs: ', np.max(zs))
+        print('min of zs: ', np.min(zs))
+        ax.scatter(xs, ys, zs, s=1.5, c=c, marker=m)
+
+    plt.show()
 
 def do_inference(filename, inference_model, time_steps=5, display_images=False, pc_inputs=False):
   """
@@ -80,20 +100,29 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
     for x in range(time_steps):
       input_i_x = np.reshape(all_data[:, i-x], [240, 320])
 
-    # do prediction here:
-    data_in = [np.transpose(input_bundle, (1, 2, 0))]
+      # in case we want point clouds as output
+      if pc_inputs:
+        input_i_x = generate_pointcloud(input_i_x)  # , max_points=1024
+      input_bundle.append(input_i_x)
 
-    if pc_inputs:
-          data_in = generate_pointcloud(data_in)  # , max_points=1024
+
+
+    # if pc_inputs:
+    #       data_in = generate_pointcloud(data_in)  # , max_points=1024
     
+    # do prediction here:
+    show_sample(np.transpose(input_bundle, (1, 2, 0)))
+    data_in = [np.transpose(input_bundle, (1, 2, 0))]
+    
+    # print("size of data in: ", np.shape(data_in))
     prediction = inference_model.sess.run(
         inference_model.pred, 
-        feed_dict={inference_model.inputs_pl: data_in, 
+        feed_dict={inference_model.inputs_pl: data_in,
                     inference_model.is_training_pl: False})
     
     predictions_array *= prediction[0]
     
-    # predict_class = np.argmax(prediction[0])
+    predict_class = np.argmax(prediction[0])
     # print("predict class now: ", predict_class)
     
     if display_images:
@@ -121,7 +150,7 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
 # set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
 # set_3_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
 
-set_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
+set_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
 model_path = '/media/tjosh/vault/MSRAction3D/logdir_pc_long_128_npy_skip_pool_5_2048/model_epoch_105'
 
 all_samples = []
@@ -147,6 +176,7 @@ for i, sample in enumerate(all_samples):
       print("***")
   except Exception as identifier:
     correct_count += 1
+    print("Error: ",identifier)
     pass
   
 print("Correct counts: ", correct_count)

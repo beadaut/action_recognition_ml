@@ -75,7 +75,7 @@ def csv2input_data(filename, time_steps=5, display_images=False,
       # print("\n")
       
       # saving a numpy file
-      show_sample(np.transpose(input_bundle, (1, 2, 0)))
+      # show_sample(np.transpose(input_bundle, (1, 2, 0)))
       np.save(input_filename, np.array(input_bundle))
 
       # # saving as pointcloud file (alone)
@@ -142,7 +142,7 @@ for i, filename in enumerate(all_files):
   try:
     # pass
     csv2input_data(filename, time_steps=5, save_point_cloud=True, 
-      save_dir='/media/tjosh/vault/MSRAction3D/pc_npy_5', augmentations=3)
+      save_dir='/media/tjosh/vault/MSRAction3D/new_pc_npy_5', augmentations=3)
   except Exception as e:
     print('Error: ',e)
     continue
@@ -152,12 +152,12 @@ for i, filename in enumerate(all_files):
 
 
 # # cut make training set and validation set
-# all_data = glob.glob('/media/tjosh/vault/MSRAction3D/npy_5/*.npy')
+# all_data = glob.glob('/media/tjosh/vault/MSRAction3D/new_pc_npy_5/*.npy')
 # print(len(all_data))
 # size_of_data = len(all_data)
 # all_data = shuffle(all_data)
 # training_cut = all_data[int(0.2*size_of_data):]
 # validation_cut = all_data[:int(0.2*size_of_data)]
-# np.save('/media/tjosh/vault/MSRAction3D/npy_5_training', training_cut)
-# np.save('/media/tjosh/vault/MSRAction3D/npy_5_validation', validation_cut)
+# np.save('/media/tjosh/vault/MSRAction3D/new_pc_npy_5_training', training_cut)
+# np.save('/media/tjosh/vault/MSRAction3D/new_pc_npy_5_validation', validation_cut)
 # print('all saved!')

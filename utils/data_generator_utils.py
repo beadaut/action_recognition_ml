@@ -180,10 +180,12 @@ class DataGenerator(object):
         
         # label_i = int(current_file.split("/")[-2].split("_")[-1])
         # print("current file: ", current_file)
-        # label_i = int(current_file.split('/')[-1].split('_')[0].split('a')[1]) # for msraction 3d
-        # if label_i==20:
-        #   label_i=0
-        label_i = int(current_file.split('\\')[-1].split('.')[0].split('_')[-1]) # for utkinect action 3d
+
+        label_i = int(current_file.split('/')[-1].split('_')[0].split('a')[1]) # for msraction 3d
+        if label_i==20:
+          label_i=0
+        
+        # label_i = int(current_file.split('\\')[-1].split('.')[0].split('_')[-1]) # for utkinect action 3d
         # print('label: ', label_i)
         
         inputs_batch.append(input_i)
