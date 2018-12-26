@@ -17,7 +17,7 @@ from convert_depth2pc import generate_pointcloud
 labels_count = [0]*20
 
 def csv2input_data(filename, time_steps=5, display_images=False, 
-  save_point_cloud=False, augmentations=1, save_dir='npy'):
+  save_point_cloud=False, augmentations=1, save_dir='npy', num_points=2048):
   """
   open motion csv data and create input data for training model
   params:
@@ -59,13 +59,14 @@ def csv2input_data(filename, time_steps=5, display_images=False,
         continue
       input_filename = filename.split('.')[0].split('/')[-1]
       input_filename = save_dir+'/'+input_filename+(str(i))+'-'+str(aug+1)
+      
       input_bundle = []
       for x in range(time_steps):
         input_i_x = np.reshape(all_data[:,i-x], [240,320])
 
         # in case we want point clouds as output
         if save_point_cloud:
-          input_i_x = generate_pointcloud(input_i_x)  # , max_points=1024
+          input_i_x = generate_pointcloud(input_i_x, max_points=num_points)  # , max_points=1024
         input_bundle.append(input_i_x)
       
       # input_bundle = [np.reshape(all_data[:,i-x], [240,320]) for x in range(time_steps)]
@@ -142,7 +143,7 @@ for i, filename in enumerate(all_files):
   try:
     # pass
     csv2input_data(filename, time_steps=5, save_point_cloud=True, 
-      save_dir='/media/tjosh/vault/MSRAction3D/new_pc_npy_5', augmentations=3)
+      save_dir='/media/tjosh/vault/MSRAction3D/new_pc_npy_5_1024', augmentations=4, num_points=1024)
   except Exception as e:
     print('Error: ',e)
     continue
@@ -161,3 +162,10 @@ for i, filename in enumerate(all_files):
 # np.save('/media/tjosh/vault/MSRAction3D/new_pc_npy_5_training', training_cut)
 # np.save('/media/tjosh/vault/MSRAction3D/new_pc_npy_5_validation', validation_cut)
 # print('all saved!')
+
+
+# %% preparing the training datasets
+# set_1_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
+# set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
+# set_3_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
+# all_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']

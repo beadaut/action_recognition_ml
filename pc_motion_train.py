@@ -178,9 +178,9 @@ def train():
         
 
         training_dataset = np.load(
-            '/media/tjosh/vault/MSRAction3D/pc_npy_5_training.npy')
+            '/media/tjosh/vault/MSRAction3D/new_pc_npy_5_training.npy')
         validation_dataset = np.load(
-            '/media/tjosh/vault/MSRAction3D/pc_npy_5_validation.npy')
+            '/media/tjosh/vault/MSRAction3D/new_pc_npy_5_validation.npy')
         # set_size = len(dataset)
         # dataset = shuffle(dataset)
         # training_dataset = dataset[:int(set_size*0.67)]

@@ -10,8 +10,17 @@ from sklearn.utils import shuffle
 
 # cut make training set and validation set
 all_data = glob.glob(
-    '/media/tjosh/vault/MSRAction3D/**/*.npy')
+    '/media/tjosh/vault/MSRAction3D/npy_5/*.npy')
 all_data = shuffle(all_data)
+
+# # for all data together:
+# size_of_data = len(all_data)
+# cut_fraction = 0.67
+# training_cut = all_data[ : int(cut_fraction*size_of_data)]
+# validation_cut = all_data[int(cut_fraction*size_of_data) : ]
+# np.save('/media/tjosh/vault/MSRAction3D/all_npy_5_t2_training', training_cut)
+# np.save('/media/tjosh/vault/MSRAction3D/all_npy_5_t2_validation', validation_cut)
+# print("Training set size: ", len(training_cut))
 
 
 # set_1_labels = [2,3,5,6,10,13,18,20]
@@ -57,25 +66,26 @@ all_data = shuffle(all_data)
 # # 20,000
 
 
-test_3_labels = [1, 4, 7, 8, 9, 11, 12, 14]
+# test_3_labels = [1, 4, 7, 8, 9, 11, 12, 14]
 
 # test_3_subjects = ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10']
-test_3_subjects = ['s01', 's03', 's05', 's07', 's09']
+# test_3_subjects = ['s01', 's03', 's05', 's07', 's09']
+test_3_subjects = ['s02', 's04', 's06', 's08', 's10']
 
 # for set 3
 test_3_filenames = []
 for data_sample in all_data:
-  label_i = int(data_sample.split('/')[-1].split('_')[0].split('a')[1])
+  # label_i = int(data_sample.split('/')[-1].split('_')[0].split('a')[1])
   subject_i = data_sample.split('/')[-1].split('_')[1]
-  if (subject_i in test_3_subjects) and (label_i in test_3_labels):
+  if (subject_i in test_3_subjects):
     test_3_filenames.append(data_sample)
 
-
-np.save('/media/tjosh/vault/MSRAction3D/npy_5_set_2_t3_train', test_3_filenames)
+np.save('/media/tjosh/vault/MSRAction3D/all_set_t3_train', test_3_filenames)
 print("size of test 3 set: ", len(test_3_filenames))
+
 # 20,000
 
-# # for utkinect action 3d dataset
+# # for utkinect action 3d dataset ##################################################
 # all_data = glob.glob(
 #     '/media/tjosh/vault/UTKinectAction3D_depth_train/**/*.npy')
 # all_data = shuffle(all_data)

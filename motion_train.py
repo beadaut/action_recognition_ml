@@ -177,30 +177,31 @@ def train():
                'merged': merged,
                'step': global_step}
         
+        
+        # %%
+        training_dataset = np.load(
+            '/media/tjosh/vault/MSRAction3D/all_npy_5_t1_training.npy')
+        validation_dataset = np.load(
+            '/media/tjosh/vault/MSRAction3D/all_npy_5_t1_validation.npy')
 
-        # training_dataset = np.load(
-        #     'd:/datasets/UTKinectAction3D_npy_5/training.npy')
-        # validation_dataset = np.load(
-        #     'd:/datasets/UTKinectAction3D_npy_5/validation.npy')
+        train_data_gen = DataGenerator(training_dataset, batch_size=cfg.batch_size)
+        validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size, augment=False)
 
-
-        dataset = glob.glob(
-            '/media/tjosh/vault/UTKinectAction3D_train_npy_6/**/*.npy')
-
-
-            
-        dataset_size = len(dataset)
+        # %%
+        # dataset = glob.glob(
+        #     '/media/tjosh/vault/UTKinectAction3D_train_npy_6/**/*.npy')
+        # dataset_size = len(dataset)
         
 
         for epoch in range(1, cfg.epoch+1):
-            dataset = shuffle(dataset)
-            train_cut = int(dataset_size*0.50)
+            # dataset = shuffle(dataset)
+            # train_cut = int(dataset_size*0.50)
             
-            training_dataset = dataset[:train_cut]
-            validation_dataset = dataset[train_cut:]
+            # training_dataset = dataset[:train_cut]
+            # validation_dataset = dataset[train_cut:]
             
-            train_data_gen = DataGenerator(training_dataset, batch_size=cfg.batch_size)
-            validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size, augment=False)
+            # train_data_gen = DataGenerator(training_dataset, batch_size=cfg.batch_size)
+            # validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size, augment=False)
 
             log_string('\n******** Training:---Epoch_{}/{} *********'.format(epoch, cfg.epoch))
             

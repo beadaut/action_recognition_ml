@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 import time
-import tensorflow as tf
+# import tensorflow as tf
 
 from utils.pc_config import cfg
 
@@ -111,7 +111,7 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
     #       data_in = generate_pointcloud(data_in)  # , max_points=1024
     
     # do prediction here:
-    show_sample(np.transpose(input_bundle, (1, 2, 0)))
+    # show_sample(np.transpose(input_bundle, (1, 2, 0)))
     data_in = [np.transpose(input_bundle, (1, 2, 0))]
     
     # print("size of data in: ", np.shape(data_in))
@@ -145,40 +145,46 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
 
   return correct
 
+model_path = 'logdir_new_pc_npy_pointnet_5_2048/model_epoch_70'
 
 # set_1_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
 # set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
 # set_3_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
+# all_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
 
-set_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
-model_path = '/media/tjosh/vault/MSRAction3D/logdir_pc_long_128_npy_skip_pool_5_2048/model_epoch_105'
+
+set_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
 
 all_samples = []
 for label in set_labels:
   datasamples = glob.glob(
-      '/media/tjosh/vault/MSRAction3D/csv/a'+label+'_s*[01-10]_e0*[0-9]_sdepth.csv')
+      '/media/tjosh/vault/MSRAction3D/csv/a'+label+'_s*[0-9]_e*[0-9]_sdepth.csv')
   for samples in datasamples:
     all_samples.append(samples)
 
+print(len(all_samples))
 
-samples_size = len(all_samples)
-print("Samples Size: ", samples_size)
-time_steps = cfg.num_frames
-inference_model = InferenceModel(num_frames=time_steps, model_path=model_path)
+# # for all samples
+# all_samples = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
 
-correct_count = 0
-for i, sample in enumerate(all_samples):
-  print("sample: {}/{}".format(i+1, len(all_samples)))
-  try:
-    correct = do_inference(sample, inference_model, time_steps=time_steps, pc_inputs=True)
-    correct_count += correct
-    if correct ==0:
-      print("***")
-  except Exception as identifier:
-    correct_count += 1
-    print("Error: ",identifier)
-    pass
+# samples_size = len(all_samples)
+# print("Samples Size: ", samples_size)
+# time_steps = cfg.num_frames
+# inference_model = InferenceModel(num_frames=time_steps, model_path=model_path)
+
+# correct_count = 0
+# for i, sample in enumerate(all_samples):
+#   print("sample: {}/{}".format(i+1, len(all_samples)))
+#   try:
+#     correct = do_inference(sample, inference_model, time_steps=time_steps, pc_inputs=True)
+#     correct_count += correct
+#     if correct ==0:
+#       print("***")
+#   except Exception as identifier:
+#     correct_count += 1
+#     print("Error: ",identifier)
+#     pass
   
-print("Correct counts: ", correct_count)
-print("Final accuracy: ", correct_count/float(samples_size))
+# print("Correct counts: ", correct_count)
+# print("Final accuracy: ", correct_count/float(samples_size))
 

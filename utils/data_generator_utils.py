@@ -363,8 +363,8 @@ def show_sample(x):
         xs = x[:, :, i][:, 0]
         ys = x[:, :, i][:, 1]
         zs = x[:, :, i][:, 2]
-        print('max of zs: ', np.max(zs))
-        print('min of zs: ', np.min(zs))
+        # print('max of zs: ', np.max(zs))
+        # print('min of zs: ', np.min(zs))
         ax.scatter(xs, ys, zs, s=1.5, c=c, marker=m)
     
     plt.show()
