@@ -78,7 +78,8 @@ def build_graph(input_pl, is_training, weight_decay=0.0, keep_prob=1.0, bn_decay
 
     net = tf_ops.fully_connected(net, cfg.num_classes, scope='fc3')
 
-    net = tf.nn.sigmoid(net, name="output_node")
+    # net = tf.nn.sigmoid(net, name="output_node")
+    net = tf.nn.softmax(net, name="output_node")
 
     print("\nShape of logits: ", net.shape)
 
@@ -91,7 +92,11 @@ def get_loss(pred, label):
     """
     
     label_one_hot = tf.one_hot(label, cfg.num_classes)
-    loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=label_one_hot)
+    # loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=label_one_hot)
+    loss = tf.keras.backend.categorical_crossentropy(label_one_hot, pred)
+
+    
+
     classify_loss = tf.reduce_mean(loss)
     tf.summary.scalar('classify loss', classify_loss)
 

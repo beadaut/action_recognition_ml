@@ -171,12 +171,13 @@ def make_input_bundle(filenames_list):
     return np.array(input_bundle)
 
 
-model_path = 'logdir_utkinect_2_simple_ff_6_96/model_epoch_80'
+model_path = 'logdir_utkinect_re_1_simple_ff_5_96/model_epoch_15'
 inference_model = InferenceModel(num_frames=cfg.num_frames, model_path=model_path)
 
 
 # general solution
-dataset_dir = '/media/tjosh/vault/UTKinectAction3D_depth_test'
+# dataset_dir = '/media/tjosh/vault/UTKinectAction3D_depth_test'
+dataset_dir = 'D:/datasets/UTKinectAction3D_depth_test'
 
 directory_list = os.walk(dataset_dir)
 
@@ -186,7 +187,10 @@ actions = {"walk":0, "sitDown":1, "standUp":2, "pickUp":3, "carry":4,
 label2actions = {0:"walk", 1:"sitDown", 2:"standUp", 3:"pickUp", 4:"carry", 
     5:"throw", 6:"push", 7:"pull", 8:"waveHands",9:"clapHands"}
 
-with open('/media/tjosh/vault/UTKinectAction3D_depth_test/actionLabel.json') as f:
+# with open('/media/tjosh/vault/UTKinectAction3D_depth_test/actionLabel.json') as f:
+#     json_file = json.load(f)
+
+with open('D:/datasets/UTKinectAction3D_depth_test/actionLabel.json') as f:
     json_file = json.load(f)
 
 action_buffer_size = cfg.num_frames
@@ -202,8 +206,8 @@ for dirs in directory_list:
     action_buffer = []
     for filename in files_list:
         
-        # subject_key = filename.split('\\')[-2]
-        subject_key = filename.split('/')[-2]
+        subject_key = filename.split('\\')[-2]
+        # subject_key = filename.split('/')[-2]
         frame_no = int(re.split('depthImg|.xml',filename)[-2])
         subject_actions = json_file[subject_key]
         
