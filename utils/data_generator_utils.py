@@ -145,9 +145,9 @@ class DataGenerator(object):
       inputs_batch = []
       labels_batch = []
 
-      # transformation
-      transf_x = int(random.random()*100) - 50
-      M = np.float32([[1, 0, 0], [0, 1, transf_x]])
+      # # transformation
+      # transf_x = int(random.random()*100) - 50
+      # M = np.float32([[1, 0, 0], [0, 1, transf_x]])
 
       for i in range(self.data_size):
         # print("\nsample: ", i)
@@ -163,9 +163,9 @@ class DataGenerator(object):
           inputs_batch = []
           labels_batch = []
 
-          # transformation
-          transf_x = int(random.random()*100) - 50
-          M = np.float32([[1, 0, 0], [0, 1, transf_x]])
+          # # transformation
+          # transf_x = int(random.random()*100) - 50
+          # M = np.float32([[1, 0, 0], [0, 1, transf_x]])
           
         
         # print("file: ", current_file)
