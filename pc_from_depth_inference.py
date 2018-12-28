@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
 import time
-# import tensorflow as tf
+import tensorflow as tf
 
 from utils.pc_config import cfg
 
@@ -102,7 +102,7 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
 
       # in case we want point clouds as output
       if pc_inputs:
-        input_i_x = generate_pointcloud(input_i_x)  # , max_points=1024
+        input_i_x = generate_pointcloud(input_i_x, max_points=cfg.num_points)  # , max_points=1024
       input_bundle.append(input_i_x)
 
 
@@ -145,7 +145,8 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
 
   return correct
 
-model_path = 'logdir_new_pc_npy_pointnet_5_2048/model_epoch_70'
+
+model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_pc_short_t3_128_npy_skip_pool_5_2048/model_epoch_100'
 
 # set_1_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
 # set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
@@ -153,38 +154,38 @@ model_path = 'logdir_new_pc_npy_pointnet_5_2048/model_epoch_70'
 # all_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
 
 
-set_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
+set_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09',
+              '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
 
-all_samples = []
-for label in set_labels:
-  datasamples = glob.glob(
-      '/media/tjosh/vault/MSRAction3D/csv/a'+label+'_s*[0-9]_e*[0-9]_sdepth.csv')
-  for samples in datasamples:
-    all_samples.append(samples)
+# all_samples = []
+# for label in set_labels:
+#   datasamples = glob.glob(
+#       '/media/tjosh/vault/MSRAction3D/csv/a'+label+'_s*[0-9]_e*[0-9]_sdepth.csv')
+#   for samples in datasamples:
+#     all_samples.append(samples)
 
-print(len(all_samples))
+# for all samples
+all_samples = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
 
-# # for all samples
-# all_samples = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
+samples_size = len(all_samples)
+print("Samples Size: ", samples_size)
+time_steps = cfg.num_frames
+inference_model = InferenceModel(num_frames=time_steps, model_path=model_path)
 
-# samples_size = len(all_samples)
-# print("Samples Size: ", samples_size)
-# time_steps = cfg.num_frames
-# inference_model = InferenceModel(num_frames=time_steps, model_path=model_path)
-
-# correct_count = 0
-# for i, sample in enumerate(all_samples):
-#   print("sample: {}/{}".format(i+1, len(all_samples)))
-#   try:
-#     correct = do_inference(sample, inference_model, time_steps=time_steps, pc_inputs=True)
-#     correct_count += correct
-#     if correct ==0:
-#       print("***")
-#   except Exception as identifier:
-#     correct_count += 1
-#     print("Error: ",identifier)
-#     pass
+correct_count = 0
+for i, sample in enumerate(all_samples):
+  print("sample: {}/{}".format(i+1, len(all_samples)))
+  try:
+    
+    correct = do_inference(sample, inference_model, time_steps=time_steps, pc_inputs=True)
+    correct_count += correct
+    if correct ==0:
+      print("***")
+  except Exception as identifier:
+    correct_count += 1
+    print("Error: ",identifier)
+    pass
   
-# print("Correct counts: ", correct_count)
-# print("Final accuracy: ", correct_count/float(samples_size))
+print("Correct counts: ", correct_count)
+print("Final accuracy: ", correct_count/float(samples_size))
 

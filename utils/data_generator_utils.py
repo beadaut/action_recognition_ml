@@ -145,9 +145,9 @@ class DataGenerator(object):
       inputs_batch = []
       labels_batch = []
 
-      # # transformation
-      # transf_x = int(random.random()*100) - 50
-      # M = np.float32([[1, 0, 0], [0, 1, transf_x]])
+      # transformation
+      transf_x = int(random.random()*100) - 50
+      M = np.float32([[1, 0, 0], [0, 1, transf_x]])
 
       for i in range(self.data_size):
         # print("\nsample: ", i)
@@ -163,9 +163,9 @@ class DataGenerator(object):
           inputs_batch = []
           labels_batch = []
 
-          # # transformation
-          # transf_x = int(random.random()*100) - 50
-          # M = np.float32([[1, 0, 0], [0, 1, transf_x]])
+          # transformation
+          transf_x = int(random.random()*50) - 25
+          M = np.float32([[1, 0, 0], [0, 1, transf_x]])
           
         
         # print("file: ", current_file)
@@ -356,7 +356,6 @@ class NewTripletGenerator(object):
   def generate(self):
 
     # initializations
-    now_key = 0
     triplet_inputs = []
     triplet_labels = []
     inputs_batch = []
@@ -372,7 +371,8 @@ class NewTripletGenerator(object):
         input_i = np.load(filename)
         input_i = np.transpose(input_i, (1,2,0))
 
-        label_i = int(filename.split('\\')[-1].split('_')[0].split('a')[1])
+        label_i = int(filename.split('/')[-1].split('_')[0].split('a')[1])
+        # label_i = int(filename.split('\\')[-1].split('_')[0].split('a')[1])
         
         triplet_inputs.append(input_i)
         triplet_labels.append(label_i)
@@ -383,60 +383,6 @@ class NewTripletGenerator(object):
       triplet_labels = []
 
 
-
-      # for i in range(self.data_size):
-      #   # print("\nsample: ", i)
-      #   try:
-      #     # get data sample
-      #     # print("filename: ", self.all_dataset[i][0])
-      #     filename = self.all_dataset[i].replace('\\', '/')
-      #     # filename = self.all_dataset[i].replace('/','\\')
-      #     input_i = np.load(filename)
-      #     # print("filename: ", filename)
-          
-      #     # this is a fix on the order of array, need to use a more effecient solution
-      #     # input_i = np.flipud(input_i) # for others
-
-          
-      #     # transpose the input to the appropriate shape
-      #     # input_i = np.transpose(input_i, (1, 2, 0))
-
-      #     # label_i = int(filename.split("/")[-2].split("_")[-1]) # for another
-
-      #     input_i = np.transpose(input_i, (1,2,0))
-      #     label_i = int(filename.split('/')[-1].split('_')[0].split('a')[1])
-      #     # label_i = int(re.split('cloud_|_label_|_reached_|.ply',
-      #     #                        self.all_dataset[i])[-1].split("-")[0])
-
-      #     # print("shape of input_i: ", np.shape(input_i))
-      #     # print("label of input_i: ", label_i)
-      #   except Exception as e:
-      #     print(e)
-      #     continue
-        
-        
-
-      #   if label_i == triplet[now_key]:
-      #     triplet_inputs.append(input_i)
-      #     triplet_labels.append(label_i)
-      #     print("label_i: ",label_i)
-      #     # print("now key: ",now_key)
-      #     # triplet_inputs.append(label_i) # to test which input class is sent
-      #     now_key += 1
-
-      #   if now_key == self.set_size:
-      #     # # insert datset here
-      #     # print("labels_batch: ",triplet_labels)
-      #     inputs_batch.append(triplet_inputs)
-      #     labels_batch.append(triplet_labels)
-      #     triplet_inputs = []
-      #     triplet_labels = []
-      #     now_key = 0
-
-      #     # including this here allows it to reset the support set everytime it is filled up
-      #     triplet = pick_triplet(
-      #         self.classes_list, seek_anchor=self.seek_anchor, seek_neg=self.seek_neg)
-
       if len(labels_batch) > self.batch_size-1:
 
         # return generated here
@@ -446,15 +392,9 @@ class NewTripletGenerator(object):
         inputs_batch = []
         labels_batch = []
         triplet_inputs = []
-        now_key = 0
 
       # reshuffle the dataset after every epoch
       self.all_dataset = shuffle(self.all_dataset)
-      if now_key >= self.set_size+1:
-        inputs_batch = []
-        labels_batch = []
-        triplet = pick_triplet(
-            self.classes_list, seek_anchor=self.seek_anchor, seek_neg=self.seek_neg)
 
             
 def pick_triplet(labels_in, seek_anchor=None, seek_neg=None):
@@ -488,7 +428,8 @@ def dataset_2_dict(files_list, labels_list):
   
   # print("labels dict: ", dataset_dict)
   for file_i in files_list:
-    label_i = int(file_i.split('\\')[-1].split('_')[0].split('a')[1])
+    # label_i = int(file_i.split('\\')[-1].split('_')[0].split('a')[1])
+    label_i = int(file_i.split('/')[-1].split('_')[0].split('a')[1])
     # print("label: ", label_i)
     if label_i in labels_list:
       dataset_dict[label_i].append(file_i)
@@ -501,10 +442,11 @@ def dataset_2_dict(files_list, labels_list):
 
 def test_triplet_generator():
   """ Test the dataset generator module"""
-  dataset_glob_path = 'd:/datasets/MSRAction3D/npy_5/*.npy'
+  # dataset_glob_path = 'd:/datasets/MSRAction3D/npy_5/*.npy'
+  dataset_glob_path = '/media/tjosh/vault/MSRAction3D/npy_5/*.npy'
   train_dataset, validation_dataset = load_npy_filenames(
       dataset_glob_path, validation_split=0.2)
-  batch_size = 5
+  batch_size = 10
   classes_list = [2,4,5,6,7,9,10,11,12,13,14,16,17,19,20]
   test_data = NewTripletGenerator(
       train_dataset, classes=classes_list, batch_size=batch_size)
@@ -516,7 +458,7 @@ def test_triplet_generator():
     y = new_data_batch[1]
     print("shape of batch dataset: ", np.shape(x))
     for i in range(batch_size):
-      print(np.shape(x[i]))
+      # print(np.shape(x[i]))
       # print(x[i])
       print(y[i])
 
@@ -559,7 +501,7 @@ def test_data_gen():
 def test_pick_triplet():
 
   classes_list = [0,2,4,5,6,7,9,10,11,12,13,14,16,17,19]
-  triplets = pick_triplet(classes_list,seek_anchor=None, seek_neg=None)
+  triplets = pick_triplet(classes_list, seek_anchor=None, seek_neg=None)
   print(triplets)
 
 

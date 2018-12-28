@@ -116,7 +116,9 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
   return correct
 
 
-model_path = 'logdir_set_1_t1_simple_ff_5_96/model_epoch_30'
+# model_path = 'logdir_all_msr_t3_aug_simple_ff_5_96/model_epoch_60'
+# model_path = 'logdir_new_all_msr_t3_aug_simple_ff_5_96/model_epoch_5'
+model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_all_msr_t3_re_simple_ff_5_96/model_epoch_40'
 
 # set_1_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
 # set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
@@ -124,7 +126,8 @@ model_path = 'logdir_set_1_t1_simple_ff_5_96/model_epoch_30'
 # all_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
 
 
-set_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
+set_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09',
+              '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
 
 all_samples = []
 for label in set_labels:
