@@ -76,8 +76,8 @@ def csv2input_data(filename, time_steps=5, display_images=False,
       # print("\n")
       
       # saving a numpy file
-      # show_sample(np.transpose(input_bundle, (1, 2, 0)))
-      np.save(input_filename, np.array(input_bundle))
+      show_sample(np.transpose(input_bundle, (1, 2, 0)), show_single=True)
+      # np.save(input_filename, np.array(input_bundle))
 
       # # saving as pointcloud file (alone)
       # print("shape of raw data: ", np.shape(all_data[:,i]))
@@ -111,39 +111,49 @@ def csv2input_data(filename, time_steps=5, display_images=False,
 # csv2input_data(filename, time_steps=5, display_images=False, save_point_cloud=True)
 
 
-def show_sample(x):
+def show_sample(x, show_single=False):
     # create plot object
     print("shape of x: ", np.shape(x))
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     ax.view_init(0, 180)
-    # ax.set_xticks([])
+    ax.set_xticks([])
     ax.set_yticks([])
     ax.set_zticks([])
-
-    # fill the plot with data (auto)
-    for i, (c, m) in enumerate([('r', 'o'), ('b', '^'), ('y', 'X'), ('g', 'v')]):
-        xs = x[:, :, i][:, 0]
-        ys = x[:, :, i][:, 1]
-        zs = x[:, :, i][:, 2]
-        print('max of zs: ', np.max(zs))
-        print('min of zs: ', np.min(zs))
-        ax.scatter(xs, ys, zs, s=1.5, c=c, marker=m)
+    
+    
+    if show_single:
+      xs = x[:, :, 0][:, 0]
+      ys = x[:, :, 0][:, 1]
+      zs = x[:, :, 0][:, 2]
+      ax.scatter(xs, ys, zs, s=1.5, c='b', marker='o')
+    else:
+      # fill the plot with data (auto)
+      for i, (c, m) in enumerate([('r', 'o'), ('b', '^'), ('y', 'X'), ('g', 'v')]):
+          xs = x[:, :, i][:, 0]
+          ys = x[:, :, i][:, 1]
+          zs = x[:, :, i][:, 2]
+          # print('max of zs: ', np.max(zs))
+          # print('min of zs: ', np.min(zs))
+          ax.scatter(xs, ys, zs, s=1.5, c=c, marker=m)
+    
 
     plt.show()
 
-all_files = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
+# all_files = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
+all_files = glob.glob('d:/datasets/MSRAction3D/csv/*.csv')
+all_files = shuffle(all_files)
 all_files = shuffle(all_files)
 print("all csv files: ", len(all_files))
 for i, filename in enumerate(all_files):
-  # print("{}/{} done.".format((i+1), len(all_files)))
+  print("{}/{} done.".format((i+1), len(all_files)))
   print('\n%d of %d'%(i+1, len(all_files)))
   # if i<388:
   #   continue
   try:
     # pass
     csv2input_data(filename, time_steps=5, save_point_cloud=True, 
-      save_dir='/media/tjosh/vault/MSRAction3D/new_pc_npy_5_1024', augmentations=4, num_points=1024)
+      save_dir='/media/tjosh/vault/MSRAction3D/new_pc_npy_5_1024', augmentations=4, num_points=2048)
   except Exception as e:
     print('Error: ',e)
     continue

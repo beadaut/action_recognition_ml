@@ -332,11 +332,8 @@ def filter_hard(sess, X, y, ops, buffer_size=20):
 def val_one_epoch(sess, validation_data_gen, ops, test_writer):
     """ ops: dict mapping from string to tf ops """
     is_training = False
-    total_correct = 0
     total_seen = 0
     loss_sum = 0
-    total_seen_class = [0 for _ in range(cfg.num_classes)]
-    total_correct_class = [0 for _ in range(cfg.num_classes)]
     
     iters_per_epoch = validation_data_gen.iters_per_epoch
 
