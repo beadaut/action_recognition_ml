@@ -11,6 +11,7 @@ import tensorflow as tf
 
 from tqdm import tqdm
 from tensorflow.python import debug as tf_debug
+from sklearn.utils import shuffle
 from utils.ops import *
 from utils.config import cfg
 from utils.data_generator_utils import DataGenerator, load_npy_filenames, jitter_point_cloud, NewTripletGenerator
@@ -254,6 +255,7 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
         if not skip:
 
             # for i in range(10): # repeat optimization i times
+            
             feed_dict = {ops['anchor_pl']: X[:,0,:,:],
                             ops['input_neg_pl']: X[:,1,:,:],
                             ops['input_pos_pl']: X[:,2,:,:],
@@ -272,7 +274,7 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
         # else:
         #     print("skipped!!!")
     
-    mean_loss = loss_sum / float(iters_per_epoch)
+    mean_loss = loss_sum / float(iter_now)
     log_string('mean loss: %f' % (mean_loss))
 
 
@@ -295,7 +297,7 @@ def filter_hard(sess, X, y, ops, buffer_size=20):
       samples_losses.append(filter_loss)
 
       # print("shape of sample: ",np.shape(sample))
-      # print("filter_loss: ",filter_loss)
+    #   print("filter_loss: ",filter_loss)
 
     sorted_samples_idx = np.argsort(samples_losses)
     # print("sample losses: ", samples_losses)
@@ -320,6 +322,9 @@ def filter_hard(sess, X, y, ops, buffer_size=20):
     # print("size of buffer samples: ", np.shape(BUFFER_SAMPLES))
 
     BUFFER_SAMPLES = new_samples
+    # print("filter_loss: ", new_samples_losses)
+
+    BUFFER_SAMPLES = shuffle(BUFFER_SAMPLES)
     
 
     if len(BUFFER_SAMPLES) < buffer_size:

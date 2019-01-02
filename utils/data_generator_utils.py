@@ -446,12 +446,12 @@ def test_triplet_generator():
   dataset_glob_path = '/media/tjosh/vault/MSRAction3D/npy_5/*.npy'
   train_dataset, validation_dataset = load_npy_filenames(
       dataset_glob_path, validation_split=0.2)
-  batch_size = 10
+  batch_size = 20
   classes_list = [2,4,5,6,7,9,10,11,12,13,14,16,17,19,20]
   test_data = NewTripletGenerator(
       train_dataset, classes=classes_list, batch_size=batch_size)
 
-  for i in range(10):
+  for i in range(5):
     print("\nEpoch: ", i+1)
     new_data_batch = next(test_data.generator)
     x = new_data_batch[0]

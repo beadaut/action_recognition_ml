@@ -10,6 +10,7 @@ import random
 import tensorflow as tf
 
 from tqdm import tqdm
+from sklearn.utils import shuffle
 from tensorflow.python import debug as tf_debug
 from utils.ops import *
 from utils.config import cfg
@@ -128,17 +129,21 @@ def train():
         # tf.summary.scalar('accuracy', accuracy)
 
 
-        # Get training operator
-        learning_rate = get_learning_rate(global_step)
-        tf.summary.scalar('learning_rate', learning_rate)
+        # # Get training operator
+        # learning_rate = get_learning_rate(global_step)
+        # tf.summary.scalar('learning_rate', learning_rate)
 
-        optimizer = tf.train.AdamOptimizer(learning_rate)
-        # optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9)
-        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        with tf.control_dependencies(update_ops):
-            class_train_op = optimizer.minimize(classification_loss, global_step=global_step)
-            embed_train_op = optimizer.minimize(embed_loss, global_step=global_step)
+        # optimizer = tf.train.AdamOptimizer(learning_rate)
+        # # optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9)
+        # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        # with tf.control_dependencies(update_ops):
+        #     class_train_op = optimizer.minimize(classification_loss, global_step=global_step)
+        #     embed_train_op = optimizer.minimize(embed_loss, global_step=global_step)
         
+        optimizer = tf.train.AdamOptimizer(cfg.init_learning_rate)
+        class_train_op = optimizer.minimize(classification_loss)
+        embed_train_op = optimizer.minimize(embed_loss)
+
         train_op = tf.group(class_train_op, embed_train_op)
 
         config = tf.ConfigProto()
@@ -206,11 +211,11 @@ def train():
         training_dataset = np.load(
             # 'd:/datasets/MSRAction3D/one_shot_train.npy')
             # 'dataset/one_shot_train.npy')
-            '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')
+            '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')#[:1000]
         validation_dataset = np.load(
             # 'dataset/one_shot_test_for_known.npy')
             # 'd:/datasets/MSRAction3D/one_shot_test_for_known.npy')
-            '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')
+            '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')#[:1000]
 
         # # load datasets: this is inside the loop to simulate k-fold validation
         # train_dataset, validation_dataset = load_npy_filenames(cfg.dataset_directory+"_"+str(
@@ -244,6 +249,7 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
     total_correct = 0
     total_seen = 0
     loss_sum = 0
+    iter_now = 1
     
     pbar = tqdm(range(iters_per_epoch))
 
@@ -253,9 +259,11 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
         # print("\nFeeding...",np.shape(current_data))
         # print("\nFeeding...",iterations)
 
-        X, current_label, skip = filter_hard(sess, X, current_label, ops,
-                                    buffer_size=cfg.batch_size)
-                                            
+        # X, current_label, skip = filter_hard(sess, X, current_label, ops,
+        #                             buffer_size=cfg.batch_size)
+        skip=False
+        X = np.array(X)                                            
+        current_label = np.array(current_label)
         if not skip:
 
             # for i in range(10): # repeat optimization i times
@@ -279,7 +287,8 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
             total_seen += cfg.batch_size
             loss_sum += loss_val
             pbar.set_description("Training Accuracry: %.6f,  Training Loss: %.6f" % (
-                (total_correct/(total_seen)), loss_sum/(iteration+1)))
+                (total_correct/(total_seen)), loss_sum/(iter_now)))
+            iter_now += 1
         # else:
         #     print("skipped!!!")
     
@@ -338,6 +347,8 @@ def filter_hard(sess, X, y, ops, buffer_size=20):
 
     BUFFER_SAMPLES = new_samples
     BUFFER_LABELS = new_labels
+
+    BUFFER_SAMPLES, BUFFER_LABELS = shuffle(BUFFER_SAMPLES, BUFFER_LABELS)
     
 
     if len(BUFFER_SAMPLES) < buffer_size:
@@ -356,6 +367,7 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer):
 
     total_seen = 0
     loss_sum = 0
+    total_correct = 0
 
     pbar = tqdm(range(iters_per_epoch))
 
@@ -365,6 +377,8 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer):
         current_data, current_labels = next(validation_data_gen.generator)
         current_data = np.array(current_data)
         current_labels = np.array(current_labels)
+
+        # print("shape of data in: ", np.shape(current_data[:, 0, :, :]))
 
         feed_dict = {ops['anchor_pl']: current_data[:,0,:,:],
                         ops['input_neg_pl']: current_data[:,1,:,:],
@@ -376,13 +390,15 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer):
                                                     feed_dict=feed_dict)
         test_writer.add_summary(summary, step)
         pred_val = np.argmax(pred_val, 1)
-        correct = np.sum(pred_val == current_labels)
+        correct = np.sum(pred_val == current_labels[:, 0])
         total_correct += correct
+        # print("total correct: ", total_correct)
+        # print("pred vals: ", pred_val)
  
         total_seen += cfg.batch_size
         loss_sum += np.absolute(basic_loss)
         pbar.set_description("Val Accuracy: %.6f, Basic Loss: %.6f" % (
-            (total_correct/(total_seen)), loss_sum/(iteration+1)))
+            (total_correct/float(total_seen)), loss_sum/(iteration+1)))
 
 
     total_avg_loss = loss_sum / float(iters_per_epoch)

@@ -77,7 +77,8 @@ def build_graph(input_pl, is_training, keep_prob, weight_decay=0.0, bn_decay=Non
 
     net = tf.layers.conv2d(
             inputs=net,
-            filters=64,
+            # filters=64,
+            filters=96,
             kernel_size=[3,3],
             activation=tf.nn.relu,
             use_bias=True,
@@ -159,9 +160,6 @@ def build_graph(input_pl, is_training, keep_prob, weight_decay=0.0, bn_decay=Non
 
 
 def get_loss(anchor_embed, input_positive_embed, input_negative_embed, track=False):
-    """ pred: B*NUM_CLASSES,
-        label: B, """
-
     embed_positive = tf.reduce_sum(tf.square(tf.subtract(anchor_embed, input_positive_embed)),axis=-1)
     embed_negative = tf.reduce_sum(tf.square(tf.subtract(anchor_embed, input_negative_embed)),axis=-1)
     alpha = 1.0
@@ -169,7 +167,6 @@ def get_loss(anchor_embed, input_positive_embed, input_negative_embed, track=Fal
     filter_loss = tf.reduce_mean(tf.subtract(embed_positive, embed_negative))
     embed_loss = tf.reduce_mean(tf.maximum(basic_loss,0.0),0)
     tf.summary.scalar('embedding loss', embed_loss)
-    # tf.summary.scalar('embedding loss', embed_loss)
     if track:
       return embed_loss, filter_loss, tf.reduce_mean(basic_loss)
     else:

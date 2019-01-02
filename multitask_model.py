@@ -154,7 +154,8 @@ def build_graph(input_pl, is_training, keep_prob, weight_decay=0.0, bn_decay=Non
     class_logits = tf.layers.dense(
         inputs=net,
         units=cfg.num_classes,
-        activation=tf.nn.relu,
+        activation=tf.nn.softmax,
+        # activation=tf.nn.sigmoid,
         use_bias=True,
         kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
         bias_initializer=tf.zeros_initializer(),
@@ -177,6 +178,7 @@ def get_loss(pred, label, anchor_embed, input_positive_embed, input_negative_emb
     loss = tf.keras.backend.categorical_crossentropy(
         label_one_hot,
         pred)
+    # loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=pred, labels=label_one_hot)
     classification_loss = tf.reduce_mean(loss)
     tf.summary.scalar('classification loss', classification_loss)
 
