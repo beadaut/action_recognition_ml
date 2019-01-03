@@ -142,6 +142,7 @@ def build_graph(input_pl, is_training, keep_prob, weight_decay=0.0, bn_decay=Non
     net = tf.layers.dense(
       inputs=net,
       units=128,
+      # units=256,
       activation=tf.nn.relu,
       use_bias=True,
       kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),

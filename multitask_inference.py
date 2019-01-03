@@ -1,6 +1,6 @@
 import glob
 import csv
-import cv2
+# import cv2
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -91,11 +91,15 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
     #       data_in = generate_pointcloud(data_in)  # , max_points=1024
     
     begin = time.time()
+
     prediction = inference_model.sess.run(
         inference_model.pred, 
         feed_dict={inference_model.inputs_pl: data_in,
                     inference_model.keep_prob_pl: 1.0,
                     inference_model.is_training_pl: False})
+    # prediction = inference_model.pred.eval(feed_dict={inference_model.inputs_pl: data_in,
+    #                                                   inference_model.keep_prob_pl: 1.0,
+    #                                                   inference_model.is_training_pl: False}, session=inference_model.sess)
     end_time = time.time()
     compu_duration = end_time - begin
     
@@ -132,7 +136,7 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
 
 
 # model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_315'
-model_path = 'logdir_multitask_re_simple_ff_5_96/model_epoch_60'
+model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_128_simple_ff_5_96/model_epoch_25'
 
 
 # set_labels = ['01', '03', '08', '15', '18']

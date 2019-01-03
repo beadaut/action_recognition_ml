@@ -104,7 +104,8 @@ def create_embedding():
         # %% restore a previous model
         sess = tf.InteractiveSession()
         # load_model_path = LOGDIR+'/model_epoch_{}'.format(cfg.load_model_epoch)
-        load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_200'
+        # load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_200'
+        load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_128_simple_ff_5_96/model_epoch_65'
         saver = tf.train.Saver()
         saver.restore(sess, load_model_path)
 
@@ -126,9 +127,9 @@ def create_embedding():
 
         # load datasets:
         test_dataset = np.load(
-            # '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')
+            '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')
             # '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')
-            '/media/tjosh/vault/MSRAction3D/one_shot_test_for_unknown.npy')
+            # '/media/tjosh/vault/MSRAction3D/one_shot_test_for_unknown.npy')
 
         test_data_gen = NewTripletGenerator(
             test_dataset, classes=class_list, batch_size=cfg.batch_size)
@@ -238,7 +239,8 @@ def test_distance():
 
         sess = tf.Session(config=config)
 
-        load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_200'
+        load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_128_simple_ff_5_96/model_epoch_50'
+        # load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_128_simple_ff_5_96/model_epoch_35'
         # load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_315'
         # load_model_path = 'logdir_multitask_re_simple_ff_5_96/model_epoch_60'
         saver = tf.train.Saver()
@@ -278,13 +280,16 @@ def test_distance():
         test_data_gen = NewTripletGenerator(
             test_dataset, classes=class_list, batch_size=1)
 
-        test_num = 100
+        test_num = 4563
+        # test_num = 1000
+        print("test number: ", test_num)
 
         # %% #
-        discrimination_threshold = 0.5
-        # discrimination_thresholds = [x/100.0 for x in range(130,200,10)]
-        discrimination_thresholds = [discrimination_threshold]
-        # print("range to test: ", discrimination_thresholds)
+        # discrimination_threshold = 1.0
+        # discrimination_thresholds = [discrimination_threshold]
+
+        discrimination_thresholds = [x/100.0 for x in range(20,200,20)]
+        print("range to test: ", discrimination_thresholds)
 
         for discrimination_threshold in discrimination_thresholds:
             total_discrim_distance = 0
@@ -345,8 +350,8 @@ def test_distance():
                 
                 total_loss += distance_loss
 
-                print("For {}; Discrimination =  {}, Similarity = {}".format(
-                    current_label, discrim_distance, similarity_distance))
+                # print("For {}; Discrimination =  {}, Similarity = {}".format(
+                #     current_label, discrim_distance, similarity_distance))
 
             # print("Total discrimination distance = {}, Total similarity distance = {} ". format(
             #     total_discrim_distance, total_similarity_distance))
@@ -356,17 +361,19 @@ def test_distance():
             #       total_similarity_distance/test_num)
 
             # discrimination precision:
-            precision = correct_discrim/float(test_num)
-            true_negative = correct_similarity/float(test_num)
-            false_negative = 1-true_negative
-            print("Discrimination Accuracy: ", correct_discrim/float(test_num))
-            print("Similarity Accuracy: ", correct_similarity/float(test_num))
-            recall = precision/(precision+false_negative)
-            f1_score = 2*((precision*recall)/(precision+recall))
-            print("Recall: ", recall)
-            print("F1 Score: ", f1_score)
+            print("True Accepts: ", correct_similarity/float(test_num))
+            print("False Accepts: ", (1 - correct_discrim/float(test_num)))
+            
+            
+            # precision = correct_discrim/float(test_num)
+            # true_negative = correct_similarity/float(test_num)
+            # false_negative = 1-true_negative
+            # recall = precision/(precision+false_negative)
+            # f1_score = 2*((precision*recall)/(precision+recall))
+            # print("Recall: ", recall)
+            # print("F1 Score: ", f1_score)
 
-            print("mean basic loss: ", total_loss/float(test_num))
+            # print("mean basic loss: ", total_loss/float(test_num))
 
 
 def show_sample(x):

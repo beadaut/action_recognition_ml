@@ -93,8 +93,8 @@ def train():
 
     with tf.Graph().as_default():
         anchor, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
-        input_negative, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
-        input_positive, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
+        input_negative, _ = placeholder_inputs(cfg.batch_size, cfg.num_frames)
+        input_positive, _ = placeholder_inputs(cfg.batch_size, cfg.num_frames)
         is_training_pl = tf.placeholder(tf.bool, shape=())
         keep_prob = tf.placeholder(tf.float32)
 
@@ -259,12 +259,13 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
         # print("\nFeeding...",np.shape(current_data))
         # print("\nFeeding...",iterations)
 
-        # X, current_label, skip = filter_hard(sess, X, current_label, ops,
-        #                             buffer_size=cfg.batch_size)
-        skip=False
-        X = np.array(X)                                            
-        current_label = np.array(current_label)
+        X, current_label, skip = filter_hard(sess, X, current_label, ops,
+                                    buffer_size=cfg.batch_size)
+        # skip=False
+        # X = np.array(X)                                            
+        # current_label = np.array(current_label)
         if not skip:
+            # print("current label: ", current_label[:, 0])
 
             # for i in range(10): # repeat optimization i times
             feed_dict = {ops['anchor_pl']: X[:,0,:,:],
@@ -372,7 +373,7 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer):
     pbar = tqdm(range(iters_per_epoch))
 
     for iteration in pbar:
-        pbar.set_description("Batch {}".format(iteration))
+        # pbar.set_description("Batch {}".format(iteration))
 
         current_data, current_labels = next(validation_data_gen.generator)
         current_data = np.array(current_data)
