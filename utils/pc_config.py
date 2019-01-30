@@ -13,9 +13,9 @@ flags.DEFINE_integer('num_points', 2048, 'number of classes')
 
 # for training
 flags.DEFINE_integer('batch_size', 64, 'batch size')
-flags.DEFINE_integer('epoch', 60, 'epoch')
+flags.DEFINE_integer('epoch', 100, 'epoch')
 flags.DEFINE_float('init_learning_rate', 0.0001, 'initial learning rate')
-flags.DEFINE_integer('decay_step', 20*40000, 'decay step') # 20Xdataset_size has worked well
+flags.DEFINE_integer('decay_step', 30*10000, 'decay step') # 20Xdataset_size (or 30X) has worked well
 flags.DEFINE_float('decay_rate', 0.9, 'decay rate')
 flags.DEFINE_float('weight_decay', 0.001, 'weight_decay')
 

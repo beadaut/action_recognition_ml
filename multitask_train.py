@@ -21,7 +21,8 @@ sys.path.append(BASE_DIR)
 
 MODEL_NAME = cfg.model_name
 
-from triple_loss_depth_image_model import build_graph, get_loss
+from multitask_model import build_graph, get_loss
+
 
 LOGDIR = cfg.logdir+MODEL_NAME+"_"+str(cfg.num_frames)+"_"+str(cfg.im_dim)
 if not os.path.exists(LOGDIR):
@@ -34,6 +35,7 @@ if os.path.exists(log_screen_file):
 fout = open(log_screen_file,'w')
 
 BUFFER_SAMPLES = []
+BUFFER_LABELS = []
 
 def log_string(out_str):
     fout.write(out_str+'\n')
@@ -92,7 +94,6 @@ def train():
         anchor, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
         input_negative, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
         input_positive, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
-
         is_training_pl = tf.placeholder(tf.bool, shape=())
         keep_prob = tf.placeholder(tf.float32)
 
@@ -102,22 +103,24 @@ def train():
         bn_decay = True
 
         # Get model and loss 
-        anchor_embed = build_graph(
+        anchor_embed, anchor_preds = build_graph(
             anchor, is_training_pl, keep_prob, weight_decay=cfg.weight_decay, bn_decay=bn_decay, reuse_layers=False)
 
-        input_positive_embed = build_graph(
+        input_positive_embed, _ = build_graph(
             input_positive, is_training_pl, keep_prob, weight_decay=cfg.weight_decay, bn_decay=bn_decay)
 
-        input_negative_embed = build_graph(
+        input_negative_embed, _ = build_graph(
             input_negative, is_training_pl, keep_prob, weight_decay=cfg.weight_decay, bn_decay=bn_decay)
         
-        loss, filter_loss, basic_loss = get_loss(anchor_embed, input_positive_embed,
-                        input_negative_embed, track=True)
-            
-        tf.summary.scalar('total_loss', loss)
+        classification_loss, embed_loss, filter_loss, basic_loss = get_loss(anchor_preds, labels, anchor_embed, input_positive_embed,
+                        input_negative_embed)
+        
+        # total loss
+        train_loss = classification_loss + embed_loss
+        tf.summary.scalar('total loss', train_loss)
 
-        print("\nplaceholders loaded...")
         # raise
+        print("\nplaceholders loaded...")
 
         # correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels))
         # correct = tf.reduce_sum(tf.cast(correct, tf.float32))
@@ -125,19 +128,18 @@ def train():
         # tf.summary.scalar('accuracy', accuracy)
 
 
-        # # Get training operator # old method
-        # learning_rate = get_learning_rate(global_step)
-        # tf.summary.scalar('learning_rate', learning_rate)
+        # Get training operator
+        learning_rate = get_learning_rate(global_step)
+        tf.summary.scalar('learning_rate', learning_rate)
 
-        # optimizer = tf.train.AdamOptimizer(learning_rate)
-        # # optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9)
-        # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        # with tf.control_dependencies(update_ops):
-        #     train_op = optimizer.minimize(loss, global_step=global_step)
-
-        optimizer = tf.train.AdamOptimizer(cfg.init_learning_rate)
-        train_op = optimizer.minimize(loss)
+        optimizer = tf.train.AdamOptimizer(learning_rate)
+        # optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            class_train_op = optimizer.minimize(classification_loss, global_step=global_step)
+            embed_train_op = optimizer.minimize(embed_loss, global_step=global_step)
         
+        train_op = tf.group(class_train_op, embed_train_op)
 
         config = tf.ConfigProto()
         config.gpu_options.allow_growth = True
@@ -186,9 +188,11 @@ def train():
         ops = {'anchor_pl': anchor,
                'input_neg_pl': input_negative,
                'input_pos_pl': input_positive,
+               'labels_pl': labels,
+               'pred': anchor_preds,
                'is_training_pl': is_training_pl,
                'keep_prob': keep_prob,
-               'loss': loss,
+               'loss': train_loss,
                'filter_loss': filter_loss,
                'basic_loss': basic_loss,
                'train_op': train_op,
@@ -204,8 +208,8 @@ def train():
             # 'dataset/one_shot_train.npy')
             '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')
         validation_dataset = np.load(
-            # 'd:/datasets/MSRAction3D/one_shot_test_for_known.npy')
             # 'dataset/one_shot_test_for_known.npy')
+            # 'd:/datasets/MSRAction3D/one_shot_test_for_known.npy')
             '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')
 
         # # load datasets: this is inside the loop to simulate k-fold validation
@@ -237,18 +241,19 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
     
     iters_per_epoch = train_data_gen.iters_per_epoch
     
+    total_correct = 0
     total_seen = 0
     loss_sum = 0
-    iter_now = 1
     
     pbar = tqdm(range(iters_per_epoch))
 
     for iteration in pbar:
         X, current_label = next(train_data_gen.generator)
+        # current_label = np.array(current_label)
         # print("\nFeeding...",np.shape(current_data))
         # print("\nFeeding...",iterations)
 
-        X, skip = filter_hard(sess, X, current_label, ops, 
+        X, current_label, skip = filter_hard(sess, X, current_label, ops,
                                     buffer_size=cfg.batch_size)
                                             
         if not skip:
@@ -257,27 +262,35 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
             feed_dict = {ops['anchor_pl']: X[:,0,:,:],
                             ops['input_neg_pl']: X[:,1,:,:],
                             ops['input_pos_pl']: X[:,2,:,:],
+                            ops['labels_pl']: current_label[:,0],
                             ops['is_training_pl']: is_training,
                             ops['keep_prob']: 0.4}
 
-            _, summary, step, loss_val = sess.run([ops['train_op'], ops['merged'], 
-                                                            ops['step'], ops['loss']], 
+            _, summary, step, loss_val, pred_val = sess.run([ops['train_op'], ops['merged'], 
+                                                   ops['step'], ops['loss'], ops['pred']],
                                                             feed_dict=feed_dict)
             train_writer.add_summary(summary, step)
+            pred_val = np.argmax(pred_val, 1)
+            # print("predicted: ", pred_val)
+            # print("correct: ", current_label)
+            correct = np.sum(pred_val == current_label[:, 0])
+            total_correct += correct
             
             total_seen += cfg.batch_size
             loss_sum += loss_val
-            pbar.set_description("Training Loss %.6f"%(loss_sum/(iter_now)))
-            iter_now += 1
+            pbar.set_description("Training Accuracry: %.6f,  Training Loss: %.6f" % (
+                (total_correct/(total_seen)), loss_sum/(iteration+1)))
         # else:
         #     print("skipped!!!")
     
     mean_loss = loss_sum / float(iters_per_epoch)
+    mean_acc = total_correct / float(total_seen)
     log_string('mean loss: %f' % (mean_loss))
+    log_string('accuracy: %f' % (mean_acc))
 
 
 def filter_hard(sess, X, y, ops, buffer_size=20):
-    global BUFFER_SAMPLES
+    global BUFFER_SAMPLES, BUFFER_LABELS
     samples_losses = []
     for sample in X:
       sample = np.expand_dims(sample, axis=0)
@@ -305,38 +318,44 @@ def filter_hard(sess, X, y, ops, buffer_size=20):
     if len(BUFFER_SAMPLES) < buffer_size:
         # print("buffering: ", np.shape(BUFFER_SAMPLES)[0])
         new_samples = BUFFER_SAMPLES
+        new_labels = BUFFER_LABELS
     else:
       BUFFER_SAMPLES = []
+      BUFFER_LABELS = []
       new_samples = []
+      new_labels = []
 
     for idx in sorted_samples_idx:
       if samples_losses[idx] > 0.0:# and random.random() > 0.5:
         continue
       new_samples_losses.append(samples_losses[idx])
       new_samples.append(X[idx])
+      new_labels.append(y[idx])
 
     # print("sorted losses: ",np.flip(new_samples_losses,0))
     # print("size of new samples: ", np.shape(new_samples))
     # print("size of buffer samples: ", np.shape(BUFFER_SAMPLES))
 
     BUFFER_SAMPLES = new_samples
+    BUFFER_LABELS = new_labels
     
 
     if len(BUFFER_SAMPLES) < buffer_size:
-      return None, True
+      return None, None, True
     else:
       
-      return np.array(BUFFER_SAMPLES[:buffer_size]), False
+      return np.array(BUFFER_SAMPLES[:buffer_size]), np.array(BUFFER_LABELS[:buffer_size]), False
 
 
 def val_one_epoch(sess, validation_data_gen, ops, test_writer):
     """ ops: dict mapping from string to tf ops """
 
     is_training = False
+
+    iters_per_epoch = validation_data_gen.iters_per_epoch
+
     total_seen = 0
     loss_sum = 0
-    
-    iters_per_epoch = validation_data_gen.iters_per_epoch
 
     pbar = tqdm(range(iters_per_epoch))
 
@@ -345,23 +364,31 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer):
 
         current_data, current_labels = next(validation_data_gen.generator)
         current_data = np.array(current_data)
+        current_labels = np.array(current_labels)
 
         feed_dict = {ops['anchor_pl']: current_data[:,0,:,:],
                         ops['input_neg_pl']: current_data[:,1,:,:],
                         ops['input_pos_pl']: current_data[:,2,:,:],
+                        ops['labels_pl']: current_labels[:, 0],
                         ops['is_training_pl']: is_training,
                         ops['keep_prob']: 1.0}
-        summary, step, basic_loss = sess.run([ops['merged'], ops['step'], ops['basic_loss']], 
+        summary, step, basic_loss, pred_val = sess.run([ops['merged'], ops['step'], ops['basic_loss'], ops['pred']],
                                                     feed_dict=feed_dict)
         test_writer.add_summary(summary, step)
+        pred_val = np.argmax(pred_val, 1)
+        correct = np.sum(pred_val == current_labels)
+        total_correct += correct
  
         total_seen += cfg.batch_size
         loss_sum += np.absolute(basic_loss)
-        pbar.set_description("Basic Loss %.6f" % (loss_sum/(iteration+1)))
+        pbar.set_description("Val Accuracy: %.6f, Basic Loss: %.6f" % (
+            (total_correct/(total_seen)), loss_sum/(iteration+1)))
 
 
-    total_avg_loss = loss_sum / float(iters_per_epoch)           
-    log_string('mean basic loss: %f' % (total_avg_loss))
+    total_avg_loss = loss_sum / float(iters_per_epoch)
+    total_avg_acc = total_correct / float(total_seen)
+    log_string('Mean basic loss: %f' % (total_avg_loss))
+    log_string('Eval accuracy: %f' % (total_avg_acc))
 
 def save_net():
     model_path = LOGDIR + "/model_epoch_" + cfg.load_model_epoch

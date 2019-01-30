@@ -39,7 +39,7 @@ def build_graph(input_pl, is_training, keep_prob, weight_decay=0.0, bn_decay=Non
             name='conv2d_layer_1',
             reuse=reuse_layers)
           
-    # # implement batch normalization
+    # implement batch normalization
     if bn_decay:
       net = do_bn(net, is_training)
 
@@ -151,26 +151,43 @@ def build_graph(input_pl, is_training, keep_prob, weight_decay=0.0, bn_decay=Non
     
     embed_logits = tf.nn.l2_normalize(net, axis=-1)
     
+    class_logits = tf.layers.dense(
+        inputs=net,
+        units=cfg.num_classes,
+        activation=tf.nn.relu,
+        use_bias=True,
+        kernel_initializer=tf.truncated_normal_initializer(stddev=0.1),
+        bias_initializer=tf.zeros_initializer(),
+        name='classification_output',
+        reuse=reuse_layers)
+
     tf.summary.histogram('embed_outputs', embed_logits)
 
     print("\nShape of logits: ", embed_logits.shape)
 
-    return embed_logits
+    return embed_logits, class_logits
 
 
-def get_loss(anchor_embed, input_positive_embed, input_negative_embed, track=False):
+def get_loss(pred, label, anchor_embed, input_positive_embed, input_negative_embed):
     """ pred: B*NUM_CLASSES,
         label: B, """
+    
+    # classification:
+    label_one_hot = tf.one_hot(label, cfg.num_classes)
+    loss = tf.keras.backend.categorical_crossentropy(
+        label_one_hot,
+        pred)
+    classification_loss = tf.reduce_mean(loss)
+    tf.summary.scalar('classification loss', classification_loss)
 
+    # embedding:
     embed_positive = tf.reduce_sum(tf.square(tf.subtract(anchor_embed, input_positive_embed)),axis=-1)
     embed_negative = tf.reduce_sum(tf.square(tf.subtract(anchor_embed, input_negative_embed)),axis=-1)
-    alpha = 1.0
+    alpha = 2.0
     basic_loss = tf.add(tf.subtract(embed_positive, embed_negative), alpha)
     filter_loss = tf.reduce_mean(tf.subtract(embed_positive, embed_negative))
     embed_loss = tf.reduce_mean(tf.maximum(basic_loss,0.0),0)
     tf.summary.scalar('embedding loss', embed_loss)
-    # tf.summary.scalar('embedding loss', embed_loss)
-    if track:
-      return embed_loss, filter_loss, tf.reduce_mean(basic_loss)
-    else:
-      return embed_loss, filter_loss
+    tf.summary.scalar('basic loss', tf.reduce_mean(basic_loss))
+
+    return classification_loss, embed_loss, filter_loss, tf.reduce_mean(basic_loss)

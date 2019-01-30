@@ -190,8 +190,10 @@ def train():
             'D:/datasets/UTKinectAction3D_npy_5/training.npy')
         validation_dataset = np.load(
             'D:/datasets/UTKinectAction3D_npy_5/validation.npy')
+            # '/media/tjosh/vault/MSRAction3D/all_npy_5_t3_training.npy')
+            # '/media/tjosh/vault/MSRAction3D/all_npy_5_t3_validation.npy')
 
-        train_data_gen = DataGenerator(training_dataset, batch_size=cfg.batch_size)
+        train_data_gen = DataGenerator(training_dataset, batch_size=cfg.batch_size, augment=False)
         validation_data_gen = DataGenerator(validation_dataset, batch_size=cfg.batch_size, augment=False)
 
         # %%

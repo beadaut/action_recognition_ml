@@ -10,7 +10,9 @@ from sklearn.utils import shuffle
 
 # cut make training set and validation set
 all_data = glob.glob(
-    'd:/datasets/MSRAction3D/npy_5/*.npy')
+    # 'd:/datasets/MSRAction3D/npy_5/*.npy')
+    # 'dataset/new_npy_5_1024/*.npy')
+    '/media/tjosh/vault/MSRAction3D/npy_5/*.npy')
 all_data = shuffle(all_data)
 
 # # for all data together:
@@ -23,22 +25,22 @@ all_data = shuffle(all_data)
 # print("Training set size: ", len(training_cut))
 
 
-# set_1_labels = [2,3,5,6,10,13,18,20]
+# # # set_1_labels = [2,3,5,6,10,13,18,20]
 set_1_labels = [2,4,5,6,7,9,10,11,12,13,14,16,17,19,20]
 
 # for set 1
 set_1_filenames = []
 for data_sample in all_data:
-  # label_i = int(data_sample.split('/')[-1].split('_')[0].split('a')[1])
-  label_i = int(data_sample.split('\\')[-1].split('_')[0].split('a')[1])
+  label_i = int(data_sample.split('/')[-1].split('_')[0].split('a')[1])
+  # label_i = int(data_sample.split('\\')[-1].split('_')[0].split('a')[1])
   if label_i in set_1_labels:
     set_1_filenames.append(data_sample)
 
 data_size = len(set_1_filenames)
 cut_point = int(0.80*data_size)
 # np.save('/media/tjosh/vault/MSRAction3D/npy_5_set_1', set_1_filenames)
-np.save('d:/datasets/MSRAction3D/one_shot_train', set_1_filenames[:cut_point])
-np.save('d:/datasets/MSRAction3D/one_shot_test_for_known', set_1_filenames[cut_point:])
+np.save('/media/tjosh/vault/MSRAction3D/one_shot_train', set_1_filenames[:cut_point])
+np.save('/media/tjosh/vault/MSRAction3D/one_shot_test_for_known', set_1_filenames[cut_point:])
 print("size of set 1: ", data_size)
 print("size of training: ", cut_point)
 
@@ -75,9 +77,9 @@ print("size of training: ", cut_point)
 
 # test_3_labels = [1, 4, 7, 8, 9, 11, 12, 14]
 
-# test_3_subjects = ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10']
-# test_3_subjects = ['s01', 's03', 's05', 's07', 's09']
-# test_3_subjects = ['s02', 's04', 's06', 's08', 's10']
+# test_3_subjects = ['s01', 's02', 's03', 's04', 's05', 's06', 's07', 's08', 's09', 's10'] # all subjects
+# test_3_subjects = ['s02', 's04', 's06', 's08', 's10'] # validation
+# test_3_subjects = ['s01', 's03', 's05', 's07', 's09'] # training
 
 # # for set 3
 # test_3_filenames = []
@@ -87,8 +89,9 @@ print("size of training: ", cut_point)
 #   if (subject_i in test_3_subjects):
 #     test_3_filenames.append(data_sample)
 
-# np.save('/media/tjosh/vault/MSRAction3D/all_set_t3_train', test_3_filenames)
-# print("size of test 3 set: ", len(test_3_filenames))
+# # np.save('/media/tjosh/vault/MSRAction3D/new_pc_npy_5_t3_training', test_3_filenames)
+# np.save('dataset/new_pc_npy_5_t3_training', test_3_filenames)
+# print("size of test: ", len(test_3_filenames))
 
 # 20,000
 
