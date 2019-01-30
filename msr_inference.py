@@ -1,6 +1,6 @@
 import glob
 import csv
-# import cv2
+import cv2
 import random
 import numpy as np
 import matplotlib.pyplot as plt
@@ -67,8 +67,8 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
   all_data = np.reshape(all_data, [240*320,-1])
 
 
-  # predictions_array = np.zeros(20)
-  predictions_array = np.ones(20)
+  predictions_array = np.zeros(20)
+  # predictions_array = np.ones(20)
   for i in range(np.shape(all_data)[-1]):
     if i < time_steps:
       continue
@@ -85,19 +85,27 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
     if pc_inputs:
           data_in = generate_pointcloud(data_in)  # , max_points=1024
     
+    begin = time.time()
     prediction = inference_model.sess.run(
         inference_model.pred, 
         feed_dict={inference_model.inputs_pl: data_in, 
                     inference_model.is_training_pl: False})
+    end_time = time.time()
+    compu_duration = end_time - begin
     
-    predictions_array *= prediction[0]
+    # print("computation duration: ", compu_duration)
+
+    predictions_array += prediction[0]
     
     # predict_class = np.argmax(prediction[0])
     # print("predict class now: ", predict_class)
+    print("predict class now: ", predictions_array)
     
     if display_images:
       cols, rows = [240,320]
       image = np.reshape(all_data[:,i], [cols, rows])
+      image_max = np.max(image)
+      norm_image = image*(1.0/image_max)
 
       cv2.imshow("Lidar Camera", image)
       key = cv2.waitKey(100)

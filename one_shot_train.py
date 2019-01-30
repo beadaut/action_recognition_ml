@@ -11,6 +11,7 @@ import tensorflow as tf
 
 from tqdm import tqdm
 from tensorflow.python import debug as tf_debug
+from sklearn.utils import shuffle
 from utils.ops import *
 from utils.config import cfg
 from utils.data_generator_utils import DataGenerator, load_npy_filenames, jitter_point_cloud, NewTripletGenerator
@@ -117,26 +118,20 @@ def train():
         tf.summary.scalar('total_loss', loss)
 
         print("\nplaceholders loaded...")
-        # raise
-
-        # correct = tf.equal(tf.argmax(pred, 1), tf.to_int64(labels))
-        # correct = tf.reduce_sum(tf.cast(correct, tf.float32))
-        # accuracy = correct / float(cfg.batch_size)
-        # tf.summary.scalar('accuracy', accuracy)
 
 
-        # # Get training operator # old method
-        # learning_rate = get_learning_rate(global_step)
-        # tf.summary.scalar('learning_rate', learning_rate)
+        # Get training operator # old method
+        learning_rate = get_learning_rate(global_step)
+        tf.summary.scalar('learning_rate', learning_rate)
 
-        # optimizer = tf.train.AdamOptimizer(learning_rate)
-        # # optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9)
-        # update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-        # with tf.control_dependencies(update_ops):
-        #     train_op = optimizer.minimize(loss, global_step=global_step)
+        optimizer = tf.train.AdamOptimizer(learning_rate)
+        # optimizer = tf.train.MomentumOptimizer(learning_rate, momentum=0.9)
+        update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
+        with tf.control_dependencies(update_ops):
+            train_op = optimizer.minimize(loss, global_step=global_step)
 
-        optimizer = tf.train.AdamOptimizer(cfg.init_learning_rate)
-        train_op = optimizer.minimize(loss)
+        # optimizer = tf.train.AdamOptimizer(cfg.init_learning_rate)
+        # train_op = optimizer.minimize(loss)
         
 
         config = tf.ConfigProto()
@@ -201,17 +196,13 @@ def train():
 
         training_dataset = np.load(
             # 'd:/datasets/MSRAction3D/one_shot_train.npy')
-            # 'dataset/one_shot_train.npy')
-            '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')
+            'dataset/one_shot_train.npy')
+            # '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')#[:1000]
         validation_dataset = np.load(
             # 'd:/datasets/MSRAction3D/one_shot_test_for_known.npy')
-            # 'dataset/one_shot_test_for_known.npy')
-            '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')
+            'dataset/one_shot_test_for_known.npy')
+            # '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')#[:1000]
 
-        # # load datasets: this is inside the loop to simulate k-fold validation
-        # train_dataset, validation_dataset = load_npy_filenames(cfg.dataset_directory+"_"+str(
-        #     cfg.num_frames)+"_"+str(cfg.num_points)+"/take-080218/*.npy", validation_split=cfg.validation_split)
-        
         train_data_gen = NewTripletGenerator(training_dataset, classes=train_list, batch_size=cfg.batch_size)
         validation_data_gen = NewTripletGenerator(validation_dataset, classes=train_list, batch_size=cfg.batch_size)
 
@@ -228,8 +219,6 @@ def train():
                 log_string('Model saved at epoch {}'.format(epoch+int(cfg.load_model_epoch)))
                 log_string(LOGDIR+'/model_epoch_{}'.format(epoch+int(cfg.load_model_epoch))+'\n')
 
-                
-                # log_string('learning rate at epoch {}: {}'.format(epoch, sess.run(model.learning_rate)))
 
 def train_one_epoch(sess, train_data_gen, ops, train_writer):
     """ ops: dict mapping from string to tf ops """
@@ -254,6 +243,7 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
         if not skip:
 
             # for i in range(10): # repeat optimization i times
+            
             feed_dict = {ops['anchor_pl']: X[:,0,:,:],
                             ops['input_neg_pl']: X[:,1,:,:],
                             ops['input_pos_pl']: X[:,2,:,:],
@@ -272,7 +262,7 @@ def train_one_epoch(sess, train_data_gen, ops, train_writer):
         # else:
         #     print("skipped!!!")
     
-    mean_loss = loss_sum / float(iters_per_epoch)
+    mean_loss = loss_sum / float(iter_now)
     log_string('mean loss: %f' % (mean_loss))
 
 
@@ -295,7 +285,7 @@ def filter_hard(sess, X, y, ops, buffer_size=20):
       samples_losses.append(filter_loss)
 
       # print("shape of sample: ",np.shape(sample))
-      # print("filter_loss: ",filter_loss)
+    #   print("filter_loss: ",filter_loss)
 
     sorted_samples_idx = np.argsort(samples_losses)
     # print("sample losses: ", samples_losses)
@@ -320,6 +310,9 @@ def filter_hard(sess, X, y, ops, buffer_size=20):
     # print("size of buffer samples: ", np.shape(BUFFER_SAMPLES))
 
     BUFFER_SAMPLES = new_samples
+    # print("filter_loss: ", new_samples_losses)
+
+    BUFFER_SAMPLES = shuffle(BUFFER_SAMPLES)
     
 
     if len(BUFFER_SAMPLES) < buffer_size:
@@ -341,7 +334,6 @@ def val_one_epoch(sess, validation_data_gen, ops, test_writer):
     pbar = tqdm(range(iters_per_epoch))
 
     for iteration in pbar:
-        pbar.set_description("Batch {}".format(iteration))
 
         current_data, current_labels = next(validation_data_gen.generator)
         current_data = np.array(current_data)

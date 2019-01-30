@@ -9,13 +9,12 @@ import matplotlib.image as mpimg
 import time
 import tensorflow as tf
 
-from utils.pc_config import cfg
+from utils.config import cfg
 
 from scipy import ndimage
 from sklearn.utils import shuffle
 
-# from motion_model import build_graph, get_loss
-from pc_motion_model import build_graph, get_loss
+from multitask_model import build_graph, get_loss
 from convert_depth2pc import generate_pointcloud
 
 labels_count = [0]*20
@@ -32,40 +31,22 @@ class InferenceModel(object):
     with tf.Graph().as_default():
       self.inputs_pl = tf.placeholder(
           tf.float32, shape=(
-              1, cfg.num_points, 3, cfg.num_frames))
+              1, 240, 320, cfg.num_frames))
       self.is_training_pl = tf.placeholder(tf.bool, shape=())
+      self.keep_prob_pl = tf.placeholder(tf.float32)
 
-      pred = build_graph(self.inputs_pl, self.is_training_pl,
-                        weight_decay=0.0, bn_decay=None)
+      # pred = build_graph(self.inputs_pl, self.is_training_pl,
+      #                   weight_decay=0.0, bn_decay=None)
+      _, self.pred = build_graph(self.inputs_pl, self.is_training_pl, self.keep_prob_pl,
+                            weight_decay=0.0, bn_decay=None, reuse_layers=False)
 
-      self.pred=tf.nn.softmax(pred)
+      # self.pred=tf.nn.softmax(pred)
 
       self.sess = tf.Session()
       saver = tf.train.Saver()
       saver.restore(self.sess, model_path)
       print("\nLoaded model... ", model_path)
 
-
-def show_sample(x):
-    # create plot object
-    print("shape of x: ", np.shape(x))
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    ax.view_init(0, 180)
-    # ax.set_xticks([])
-    ax.set_yticks([])
-    ax.set_zticks([])
-
-    # fill the plot with data (auto)
-    for i, (c, m) in enumerate([('r', 'o'), ('b', '^'), ('y', 'X'), ('g', 'v')]):
-        xs = x[:, :, i][:, 0]
-        ys = x[:, :, i][:, 1]
-        zs = x[:, :, i][:, 2]
-        print('max of zs: ', np.max(zs))
-        print('min of zs: ', np.min(zs))
-        ax.scatter(xs, ys, zs, s=1.5, c=c, marker=m)
-
-    plt.show()
 
 def do_inference(filename, inference_model, time_steps=5, display_images=False, pc_inputs=False):
   """
@@ -89,8 +70,8 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
   all_data = np.reshape(all_data, [240*320,-1])
 
 
-  # predictions_array = np.zeros(20)
-  predictions_array = np.ones(20)
+  predictions_array = np.zeros(20)
+  # predictions_array = np.ones(20)
   for i in range(np.shape(all_data)[-1]):
     if i < time_steps:
       continue
@@ -99,41 +80,45 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
     input_bundle = []
     for x in range(time_steps):
       input_i_x = np.reshape(all_data[:, i-x], [240, 320])
-
-      # in case we want point clouds as output
-      if pc_inputs:
-        input_i_x = generate_pointcloud(input_i_x, max_points=cfg.num_points)  # , max_points=1024
       input_bundle.append(input_i_x)
 
+    # do prediction here:
+    data_in = [np.transpose(input_bundle, (1, 2, 0))]
 
+    # print("shape of data in: ", np.shape(data_in))
 
     # if pc_inputs:
     #       data_in = generate_pointcloud(data_in)  # , max_points=1024
     
-    # do prediction here:
-    # show_sample(np.transpose(input_bundle, (1, 2, 0)))
-    data_in = [np.transpose(input_bundle, (1, 2, 0))]
-    
-    # print("size of data in: ", np.shape(data_in))
-    begin_time = time.time()
+    begin = time.time()
+
     prediction = inference_model.sess.run(
         inference_model.pred, 
         feed_dict={inference_model.inputs_pl: data_in,
+                    inference_model.keep_prob_pl: 1.0,
                     inference_model.is_training_pl: False})
+    # prediction = inference_model.pred.eval(feed_dict={inference_model.inputs_pl: data_in,
+    #                                                   inference_model.keep_prob_pl: 1.0,
+    #                                                   inference_model.is_training_pl: False}, session=inference_model.sess)
     end_time = time.time()
-    compu_duration = end_time - begin_time
+    compu_duration = end_time - begin
+    
+    # print("computation duration: ", compu_duration)
 
-    print("computation duration: ", compu_duration)
-    predictions_array *= prediction[0]
+    predictions_array += prediction[0]
     
     predict_class = np.argmax(prediction[0])
     # print("predict class now: ", predict_class)
+    # print("predict class now: ", prediction[0])
+    # print("predict class now: ", predictions_array)
     
     if display_images:
       cols, rows = [240,320]
       image = np.reshape(all_data[:,i], [cols, rows])
+      image_max = np.max(image)
+      norm_image = image*(1.0/image_max)
 
-      cv2.imshow("Lidar Camera", image)
+      cv2.imshow("Lidar Camera", norm_image)
       key = cv2.waitKey(100)
       if key == 27:   # Esc key
           break
@@ -150,27 +135,24 @@ def do_inference(filename, inference_model, time_steps=5, display_images=False, 
   return correct
 
 
-# model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_pc_short_t3_128_npy_skip_pool_5_2048/model_epoch_100'
-model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_pc_short_t3_128_npy_skip_pool_5_1024/model_epoch_100'
-
-# set_1_labels = ['02', '03', '05', '06', '10', '13', '18', '20']
-# set_2_labels = ['01', '04', '07', '08', '09', '11', '12', '14']
-# set_3_labels = ['06', '14', '15', '16', '17', '18', '19', '20']
-# all_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
+# model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_315'
+model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_128_simple_ff_5_96/model_epoch_25'
 
 
-set_labels = ['01', '02', '03', '04', '05', '06', '07', '08', '09',
-              '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']
+# set_labels = ['01', '03', '08', '15', '18']
 
-# all_samples = []
-# for label in set_labels:
-#   datasamples = glob.glob(
-#       '/media/tjosh/vault/MSRAction3D/csv/a'+label+'_s*[0-9]_e*[0-9]_sdepth.csv')
-#   for samples in datasamples:
-#     all_samples.append(samples)
+set_labels = ['02', '04', '05', '06', '07', '09',
+              '10', '11', '12', '13', '14', '16', '17', '19', '20']
 
-# for all samples
-all_samples = glob.glob('/media/tjosh/vault/MSRAction3D/csv/*.csv')
+
+all_samples = []
+for label in set_labels:
+  datasamples = glob.glob(
+      '/media/tjosh/vault/MSRAction3D/csv/a'+label+'_s*[0-9]_e*[0-9]_sdepth.csv')
+  for samples in datasamples:
+    all_samples.append(samples)
+
+all_samples = shuffle(all_samples)
 
 samples_size = len(all_samples)
 print("Samples Size: ", samples_size)
@@ -181,14 +163,13 @@ correct_count = 0
 for i, sample in enumerate(all_samples):
   print("sample: {}/{}".format(i+1, len(all_samples)))
   try:
-    
-    correct = do_inference(sample, inference_model, time_steps=time_steps, pc_inputs=True)
+    correct = do_inference(sample, inference_model, time_steps=time_steps, display_images=False)
     correct_count += correct
     if correct ==0:
       print("***")
   except Exception as identifier:
+    print(identifier)
     correct_count += 1
-    print("Error: ",identifier)
     pass
   
 print("Correct counts: ", correct_count)

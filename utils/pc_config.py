@@ -9,7 +9,7 @@ flags = tf.app.flags
 
 flags.DEFINE_integer('num_frames', 5, 'number of frames')
 flags.DEFINE_integer('num_classes', 20, 'number of classes')
-flags.DEFINE_integer('num_points', 2048, 'number of classes')
+flags.DEFINE_integer('num_points', 1024, 'number of classes')
 
 # for training
 flags.DEFINE_integer('batch_size', 64, 'batch size')

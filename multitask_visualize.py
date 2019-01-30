@@ -24,11 +24,7 @@ sys.path.append(BASE_DIR)
 
 MODEL_NAME = cfg.model_name
 
-if MODEL_NAME=="simple_ff":
-    from triple_loss_depth_image_model import build_graph, get_loss
-else:
-    print("The model name give in the config file is not available, please check and try again!")
-    raise
+from multitask_model import build_graph, get_loss
 
 LOGDIR = cfg.logdir+MODEL_NAME+"_"+str(cfg.num_frames)+"_"+str(cfg.im_dim)
 if not os.path.exists(LOGDIR):
@@ -74,7 +70,6 @@ def placeholder_inputs(batch_size, num_frames):
 def create_embedding():
     print('***** Config *****')
     print('***** Building Point {}...'.format(MODEL_NAME))
-    print('** num_points: {}'.format(cfg.num_points))
     print('** num_frames: {}'.format(cfg.num_frames))
     print('** num_classes: {}'.format(cfg.num_classes))
     print('** batch_size: {}'.format(cfg.batch_size))
@@ -83,7 +78,6 @@ def create_embedding():
     print('** decay_step: {}'.format(cfg.decay_step))
     print('** decay_rate: {}'.format(cfg.decay_rate))
     print('** weight_decay: {}'.format(cfg.weight_decay))
-    print('** feature transformation: {}'.format(cfg.feat_transform))
 
     with tf.Graph().as_default():
         anchor, labels = placeholder_inputs(cfg.batch_size, cfg.num_frames)
@@ -98,20 +92,20 @@ def create_embedding():
         
         bn_decay = True
 
-        tf.summary.scalar('bn_decay', bn_decay)
+        # tf.summary.scalar('bn_decay', bn_decay)
 
         # Get model and loss
-        anchor_embed = build_graph(
+        anchor_embed, pred = build_graph(
             anchor, is_training_pl, keep_prob, weight_decay=cfg.weight_decay, bn_decay=bn_decay, reuse_layers=False)
 
-        # loss, filter_loss = get_loss(anchor_embed, input_positive_embed,
-        #                               input_negative_embed)
 
         print("\nplaceholders loaded...")
 
         # %% restore a previous model
         sess = tf.InteractiveSession()
-        load_model_path = LOGDIR+'/model_epoch_{}'.format(cfg.load_model_epoch)
+        # load_model_path = LOGDIR+'/model_epoch_{}'.format(cfg.load_model_epoch)
+        # load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_200'
+        load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_128_simple_ff_5_96/model_epoch_65'
         saver = tf.train.Saver()
         saver.restore(sess, load_model_path)
 
@@ -128,18 +122,17 @@ def create_embedding():
 
         print("\nEmbedding session initialized...\n")
 
-        # classes = [0, 1, 4, 5, 7, 8]
-        # classes = [2,3,6]
-
-        # classes = [0, 3, 8, 15, 18]
-        classes = [2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 19, 20]
+        # class_list = [2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 19, 20]
+        class_list = [1, 3, 8, 15, 18]
 
         # load datasets:
         test_dataset = np.load(
             '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')
+            # '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')
+            # '/media/tjosh/vault/MSRAction3D/one_shot_test_for_unknown.npy')
 
         test_data_gen = NewTripletGenerator(
-            test_dataset, classes=classes, batch_size=cfg.batch_size)
+            test_dataset, classes=class_list, batch_size=cfg.batch_size)
 
         current_data, current_label = next(test_data_gen.generator)
 
@@ -164,6 +157,7 @@ def create_embedding():
         projector.visualize_embeddings(summary_writer, config)
 
         # run session to evaluate the embedding tensor
+        current_data=np.array(current_data)
         embedding_feed_dict = {
             anchor: current_data[:, 0, :, :],
             keep_prob: 1.0,
@@ -202,9 +196,9 @@ def test_distance():
     with tf.Graph().as_default():
         anchor, labels = placeholder_inputs(
             cfg.batch_size, cfg.num_frames)
-        input_negative, labels = placeholder_inputs(
+        input_negative, _ = placeholder_inputs(
             cfg.batch_size, cfg.num_frames)
-        input_positive, labels = placeholder_inputs(
+        input_positive, _ = placeholder_inputs(
             cfg.batch_size, cfg.num_frames)
         is_training_pl = tf.placeholder(tf.bool, shape=())
         keep_prob = tf.placeholder(tf.float32)
@@ -213,17 +207,17 @@ def test_distance():
         bn_decay = True
 
         # Get model and loss
-        anchor_embed = build_graph(
+        anchor_embed, pred = build_graph(
             anchor, is_training_pl, keep_prob, weight_decay=cfg.weight_decay, bn_decay=bn_decay, reuse_layers=False)
 
-        input_positive_embed = build_graph(
+        input_positive_embed, _ = build_graph(
             input_positive, is_training_pl, keep_prob, weight_decay=cfg.weight_decay, bn_decay=bn_decay)
 
-        input_negative_embed = build_graph(
+        input_negative_embed, _ = build_graph(
             input_negative, is_training_pl, keep_prob, weight_decay=cfg.weight_decay, bn_decay=bn_decay)
 
-        loss, filter_loss = get_loss(anchor_embed, input_positive_embed,
-                                      input_negative_embed)
+        classification_loss, loss, filter_loss, basic_loss = get_loss(pred, labels, anchor_embed, input_positive_embed,
+                                                                      input_negative_embed)
 
         emb_distance = tf.reduce_mean(tf.reduce_sum(
             tf.square(anchor_embed - input_negative_embed), 1))
@@ -245,9 +239,10 @@ def test_distance():
 
         sess = tf.Session(config=config)
 
-        # load_model_path = LOGDIR+'/model_epoch_{}'.format(cfg.load_model_epoch)
-        load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_one_shot_128_simple_ff_5_96/model_epoch_50'
-        # load_model_path = 'logdir_one_shot_re_simple_ff_5_96/model_epoch_100'
+        load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_128_simple_ff_5_96/model_epoch_50'
+        # load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_128_simple_ff_5_96/model_epoch_35'
+        # load_model_path = '/media/tjosh/vault/MSRAction3D/trained_models/logdir_multitask_lowlr_simple_ff_5_96/model_epoch_315'
+        # load_model_path = 'logdir_multitask_re_simple_ff_5_96/model_epoch_60'
         saver = tf.train.Saver()
         saver.restore(sess, load_model_path)
         print("\nModel restored...", load_model_path)
@@ -272,27 +267,28 @@ def test_distance():
 
         print("\nEmbedding session initialized...\n")
 
-        # class_list = [2,4,5,6,7,9,10,11,12,13,14,16,17,19,20]
+        # class_list = [2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 19, 20]
         class_list = [1, 3, 8, 15, 18]
+        
 
         # load datasets:
         test_dataset = np.load(
             # '/media/tjosh/vault/MSRAction3D/one_shot_test_for_known.npy')
-        '/media/tjosh/vault/MSRAction3D/one_shot_test_for_unknown.npy')
+            '/media/tjosh/vault/MSRAction3D/one_shot_test_for_unknown.npy')
             # '/media/tjosh/vault/MSRAction3D/one_shot_train.npy')
         
         test_data_gen = NewTripletGenerator(
             test_dataset, classes=class_list, batch_size=1)
 
-        # test_num = 1000
         test_num = 4563
+        # test_num = 1000
         print("test number: ", test_num)
 
         # %% #
         # discrimination_threshold = 1.0
         # discrimination_thresholds = [discrimination_threshold]
 
-        discrimination_thresholds = [x/100.0 for x in range(20, 200, 20)]
+        discrimination_thresholds = [x/100.0 for x in range(20,200,20)]
         print("range to test: ", discrimination_thresholds)
 
         for discrimination_threshold in discrimination_thresholds:
@@ -367,7 +363,8 @@ def test_distance():
             # discrimination precision:
             print("True Accepts: ", correct_similarity/float(test_num))
             print("False Accepts: ", (1 - correct_discrim/float(test_num)))
-
+            
+            
             # precision = correct_discrim/float(test_num)
             # true_negative = correct_similarity/float(test_num)
             # false_negative = 1-true_negative
@@ -401,7 +398,7 @@ def show_sample(x):
 def main(_):
   print('Start Loading for Embedding ...')
   test_distance()
-#   create_embedding()
+  # create_embedding()
   print('Finished Loading for Embedding')
   # fout.close()
 

@@ -25,8 +25,9 @@ all_data = shuffle(all_data)
 # print("Training set size: ", len(training_cut))
 
 
-# # # set_1_labels = [2,3,5,6,10,13,18,20]
-set_1_labels = [2,4,5,6,7,9,10,11,12,13,14,16,17,19,20]
+# # # set_1_labels = [1,3,8,15,18]
+# set_1_labels = [2, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 19, 20]
+set_1_labels = [1, 3, 8, 15, 18]
 
 # for set 1
 set_1_filenames = []
@@ -39,10 +40,10 @@ for data_sample in all_data:
 data_size = len(set_1_filenames)
 cut_point = int(0.80*data_size)
 # np.save('/media/tjosh/vault/MSRAction3D/npy_5_set_1', set_1_filenames)
-np.save('/media/tjosh/vault/MSRAction3D/one_shot_train', set_1_filenames[:cut_point])
-np.save('/media/tjosh/vault/MSRAction3D/one_shot_test_for_known', set_1_filenames[cut_point:])
+# np.save('/media/tjosh/vault/MSRAction3D/one_shot_train', set_1_filenames[:cut_point])
+np.save('/media/tjosh/vault/MSRAction3D/one_shot_test_for_unknown', set_1_filenames)
 print("size of set 1: ", data_size)
-print("size of training: ", cut_point)
+# print("size of training: ", cut_point)
 
 # set_2_labels = [1, 4, 7, 8, 9, 11, 12, 14]
 

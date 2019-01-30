@@ -8,10 +8,11 @@ flags = tf.app.flags
 ############################
 
 flags.DEFINE_integer('num_frames', 5, 'number of frames')
-flags.DEFINE_integer('num_classes', 10, 'number of classes')
+flags.DEFINE_integer('num_classes', 20, 'number of classes')
+flags.DEFINE_integer('num_points', 1024, 'number of classes')
 
 # for training
-flags.DEFINE_integer('batch_size', 64, 'batch size')
+flags.DEFINE_integer('batch_size', 128, 'batch size')
 flags.DEFINE_integer('im_dim', 96, 'input_image dimension')
 flags.DEFINE_integer('epoch', 100, 'epoch')
 flags.DEFINE_float('init_learning_rate', 0.0001, 'initial learning rate')
@@ -25,13 +26,14 @@ flags.DEFINE_float('weight_decay', 0.001, 'weight_decay')
 ############################ load_model_epoch
 flags.DEFINE_string('model_name', 'simple_ff', 'name of the model') # pointnet or attention
 # flags.DEFINE_string('logdir', 'logdir_msr_one_shot_1_', 'logs directory')
+flags.DEFINE_string('logdir', 'logdir_incp_', 'logs directory')
 # flags.DEFINE_string('logdir', 'logdir_new_all_msr_t3_aug_', 'logs directory')
-flags.DEFINE_string('logdir', 'logdir_one_shot_re_', 'logs directory')
+# flags.DEFINE_string('logdir', 'logdir_one_shot_test_', 'logs directory')
 # flags.DEFINE_string('logdir', 'logdir_multitask_test_', 'logs directory')
 flags.DEFINE_string('dataset_directory', 'dataset/hand_controls_npy', 'dataset directory')
 flags.DEFINE_boolean('is_training', True, 'train or predict phase')
 # flags.DEFINE_string('load_model_epoch', '60', 'epoch to load model from')
-flags.DEFINE_string('load_model_epoch', '0', 'epoch to load model from')
+flags.DEFINE_string('load_model_epoch', '120', 'epoch to load model from')
 flags.DEFINE_string('test_logdir', 'test_logdir_', 'test logs directory')
 flags.DEFINE_integer('save_model_freq', 5, 'the frequency of saving model(epoch)')
 flags.DEFINE_boolean('debug', False, 'Debug mode')
