@@ -17,7 +17,7 @@ sys.path.append(BASE_DIR)
 
 MODEL_NAME = cfg.model_name
 
-from chalearn_motion_model import build_graph, get_loss
+from pc_chalearn_model import build_graph, get_loss
 
 LOGDIR = cfg.logdir+MODEL_NAME+"_"+str(cfg.num_frames)+"_"+str(cfg.im_dim)
 if not os.path.exists(LOGDIR):
@@ -65,7 +65,7 @@ def MCC(TP, TN, FP, FN):
 def placeholder_inputs(batch_size, num_frames):
     # batch size should be Nnone
     inputs_pl = tf.placeholder(tf.float32, shape=(
-        cfg.batch_size, 240, 320, num_frames))
+        cfg.batch_size, cfg.num_points, 3, num_frames))
     labels_pl = tf.placeholder(tf.int32, shape=(None))
     return inputs_pl, labels_pl
 
@@ -198,9 +198,9 @@ def train():
         # raise
 
         train_data_gen = DataGenerator(
-            training_filenames, training_labels, batch_size=cfg.batch_size, augment=False, steps=cfg.num_frames)
+            training_filenames, training_labels, batch_size=cfg.batch_size, augment=False, steps=cfg.num_frames, pc_inputs=True)
         validation_data_gen = DataGenerator(
-            validation_filenames, validation_labels, batch_size=cfg.batch_size, augment=False, steps=cfg.num_frames)
+            validation_filenames, validation_labels, batch_size=cfg.batch_size, augment=False, steps=cfg.num_frames, pc_inputs=True)
 
 
         for epoch in range(1, cfg.epoch+1):

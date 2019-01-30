@@ -10,10 +10,13 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy import ndimage
 from copy import deepcopy
 from sklearn.utils import shuffle
+from convert_depth2pc import generate_pointcloud
 
 """
 Test the util functions
 """
+
+
 
 def load_txt_filenames(filenames_txt_file, validation_split=0):
     txt_file = open(filenames_txt_file, "r")
@@ -23,7 +26,7 @@ def load_txt_filenames(filenames_txt_file, validation_split=0):
       line_txt_list = line.rstrip('\n').split(' ')
       all_line_txt_list.append(line_txt_list)
     else:
-      if len(line_txt_list) > 1:
+      if len(line_txt_list) > 2:
         labels_present = True
     
     size_of_data = len(all_line_txt_list)
@@ -44,14 +47,17 @@ def load_txt_filenames(filenames_txt_file, validation_split=0):
       return all_filename_i, all_label_i
     else:
       all_filename_i = []
+      all_filename_k = []
       for i in range(size_of_data):
         filename_i = all_line_txt_list[i][0]
+        filename_k = all_line_txt_list[i][1]
 
         # we want only the depth images: "K_"
-        filename_i = filename_i.replace("M_", "K_")
-        if "K_" in filename_i:
-          all_filename_i.append(filename_i)
-      return all_filename_i
+        # filename_i = filename_i.replace("M_", "K_")
+        # if "K_" in filename_i:
+        all_filename_i.append(filename_i)
+        all_filename_k.append(filename_k)
+      return all_filename_i, all_filename_k
 
     
     # all_files = None
@@ -71,7 +77,7 @@ def load_txt_filenames(filenames_txt_file, validation_split=0):
     # else:
     #   return all_files
 
-def read_clip_to_frames(clip, skip_frame=0, show_frames=False):
+def read_clip_to_frames(clip, skip_frame=0, show_frames=False, pc_inputs=False, max_points=1024):
   """
   load a video clip and split the clip to frames
   params:
@@ -85,30 +91,33 @@ def read_clip_to_frames(clip, skip_frame=0, show_frames=False):
   while(ret):
     # Capture frame-by-frame
     ret, frame = cap.read()
-    
-    # print("ret: ",ret)
-    try:
+    if ret:
+      # print("ret: ",ret)
       frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+      # in case we want point clouds as output
+      if pc_inputs:
+        frame = generate_pointcloud(frame, max_points=max_points)
+
       frames.append(frame)  
-      
-    except Exception as e:
-      pass
-  
+    
   # Display the resulting frame
   if show_frames:
-    for frame_i in frames:
+    for i, frame_i in enumerate(frames):
+      # print(frame_i)
       cv2.imshow('frame', frame_i)
+      cv2.imwrite("/home/tjosh/Pictures/chalearn/a_"+str(i)+".jpg", frame_i)
       if cv2.waitKey(10) & 0xFF == ord('q'):
           break
     cv2.destroyAllWindows()
 
   # When everything done, release the capture
   cap.release()
+  assert len(frames)>0, "No Frames loaded!"
   return frames
 
 
-def read_clip_to_frame_bundles(clip, steps=5):
-  clips_array = read_clip_to_frames(clip)
+def read_clip_to_frame_bundles(clip, steps=5, pc_inputs=False, max_points=1024):
+  clips_array = read_clip_to_frames(clip, pc_inputs=pc_inputs, max_points=max_points)
 
   input_bundle = []
   all_input_bundle = []
@@ -142,11 +151,13 @@ class DataGenerator(object):
   Class for creating a datset generator
   """
 
-  def __init__(self, dataset_file_list, dataset_labels_list, batch_size=100, steps=6, augment=True):
+  def __init__(self, dataset_file_list, dataset_labels_list, batch_size=100, steps=6, augment=True, pc_inputs=False, max_points=1024):
     super(DataGenerator, self).__init__()
 
     self.augment = augment
     self.steps = steps
+    self.pc_inputs = pc_inputs
+    self.max_points = max_points
     self.all_dataset = dataset_file_list
     self.all_labels = dataset_labels_list
     self.all_dataset, self.all_labels = shuffle(self.all_dataset, self.all_labels)
@@ -185,8 +196,9 @@ class DataGenerator(object):
           inputs_batch = []
           labels_batch = []
 
-        current_bundle = read_clip_to_frame_bundles(current_file, steps=self.steps)
-
+        current_bundle = read_clip_to_frame_bundles(current_file, steps=self.steps, pc_inputs=self.pc_inputs, max_points=self.max_points)
+        # print("outputing bundle...")
+        
         label_i = int(self.all_labels[i])
         if label_i==249:
           label_i=0
@@ -249,14 +261,16 @@ def test_loader():
   #     "/media/tjosh/vault/chalearn_dataset/IsoGR_2016/train/train_list.txt")
   
   filenames, labels = load_txt_filenames(
-      "/media/tjosh/vault/chalearn_dataset/IsoGR_2016/test/test_list.txt")
+      "/media/tjosh/vault/chalearn_dataset/IsoGR_2016/train/train_list.txt")
+
+  filenames, label = shuffle(filenames, labels)
 
   # print(type(filenames))
   frame_len_list = []
   dataset_len = len(filenames)
   for data_i in range(dataset_len):
     # print("data {} of {}".format(data_i, dataset_len))
-    one_file = "/media/tjosh/vault/chalearn_dataset/IsoGR_2016/test/" + \
+    one_file = "/media/tjosh/vault/chalearn_dataset/IsoGR_2016/train/" + \
         filenames[data_i]
 
     # print("filename: ",one_file)
@@ -264,7 +278,8 @@ def test_loader():
     # print("\n")
 
     # frames = read_clip_to_frame_bundles(one_file, steps=10)
-    frames = read_clip_to_frames(one_file)
+    frames = read_clip_to_frames(one_file, show_frames=True)
+    break
 
     frame_len = np.shape(frames)[0]
     # print(frame_len)
@@ -285,12 +300,12 @@ def test_generator():
   labels = np.load(
       '/media/tjosh/vault/chalearn_dataset/IsoGR_2016/train_labels.npy')
 
-  data_gen = DataGenerator(filenames, labels, batch_size=64)
+  data_gen = DataGenerator(filenames, labels, batch_size=10, pc_inputs=True)
   new_data_batch = next(data_gen.generator)
   x = new_data_batch[0]
   y = new_data_batch[1]
-  # print("size of dataset batch: ", np.shape(x))
-  # print(y)
+  print("size of dataset batch: ", np.shape(x))
+  print(y)
   # for i in range(20):
   #   print(x[i])
   #   # show_sample(x[i])
@@ -338,5 +353,6 @@ def test_logic():
 if __name__ == '__main__':
   # test_generator()
   # test_logic()
-  # test_loader()
-  trim_train_data()
+  test_loader()
+  # read_clip_to_frames(clip, skip_frame=0, show_frames=True):
+  # trim_train_data()
